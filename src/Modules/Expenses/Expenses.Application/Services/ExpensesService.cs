@@ -1,6 +1,8 @@
-HEADERnamespace a;
+using Expenses.Application.Interfaces;
 
-public class ExpensesService
+namespace Expenses.Application.Services;
+
+public class ExpensesService : IExpensesService
 {
     
 }

@@ -1,6 +1,8 @@
+using Incomes.Application.Interfaces;
+
 namespace Incomes.Application.Services;
 
-public class IncomesService
-{
+public class IncomesService : IIncomesService
+{  
     
 }
