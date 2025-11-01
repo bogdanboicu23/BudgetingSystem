@@ -1,0 +1,8 @@
+/Users/bogdanboicu/Desktop/Proiecte/BudgetingSystem/microservices/services/user-service/obj/Debug/net8.0/UserService.csproj.AssemblyReference.cache
+/Users/bogdanboicu/Desktop/Proiecte/BudgetingSystem/microservices/services/user-service/obj/Debug/net8.0/UserService.GeneratedMSBuildEditorConfig.editorconfig
+/Users/bogdanboicu/Desktop/Proiecte/BudgetingSystem/microservices/services/user-service/obj/Debug/net8.0/UserService.AssemblyInfoInputs.cache
+/Users/bogdanboicu/Desktop/Proiecte/BudgetingSystem/microservices/services/user-service/obj/Debug/net8.0/UserService.AssemblyInfo.cs
+/Users/bogdanboicu/Desktop/Proiecte/BudgetingSystem/microservices/services/user-service/obj/Debug/net8.0/UserService.csproj.CoreCompileInputs.cache
+/Users/bogdanboicu/Desktop/Proiecte/BudgetingSystem/microservices/services/user-service/obj/Debug/net8.0/UserService.MvcApplicationPartsAssemblyInfo.cs
+/Users/bogdanboicu/Desktop/Proiecte/BudgetingSystem/microservices/services/user-service/obj/Debug/net8.0/UserService.MvcApplicationPartsAssemblyInfo.cache
+/Users/bogdanboicu/Desktop/Proiecte/BudgetingSystem/microservices/services/user-service/obj/Debug/net8.0/UserService.sourcelink.json
