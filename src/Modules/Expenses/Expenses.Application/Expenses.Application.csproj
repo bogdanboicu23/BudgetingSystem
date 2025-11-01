@@ -1,0 +1,16 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <Folder Include="Commands\CreateExpense\" />
+      <Folder Include="Commands\DeleteExpense\" />
+      <Folder Include="Commands\UpdateExpense\" />
+      <Folder Include="Queries\GetExpensesList\" />
+    </ItemGroup>
+
+</Project>

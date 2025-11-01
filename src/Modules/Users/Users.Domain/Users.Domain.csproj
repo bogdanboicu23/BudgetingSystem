@@ -1,0 +1,20 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <Folder Include="Dtos\" />
+      <Folder Include="Enums\" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\..\..\Monolith_BudgetSystem.Infrastructure\Monolith_BudgetSystem.Infrastructure.csproj" />
+      <ProjectReference Include="..\..\..\Monolith_BudgetSystem.Shared\Monolith_BudgetSystem.Shared.csproj" />
+      <ProjectReference Include="..\..\Budgets\Budgets.Domain\Budgets.Domain.csproj" />
+    </ItemGroup>
+
+</Project>
