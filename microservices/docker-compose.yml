@@ -1,0 +1,142 @@
+version: '3.8'
+
+services:
+  # API Gateway
+  api-gateway:
+    build:
+      context: ./gateway
+      dockerfile: Dockerfile
+    ports:
+      - "5000:80"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - USER_SERVICE_URL=http://user-service:80
+      - BUDGET_SERVICE_URL=http://budget-service:80
+      - EXPENSE_SERVICE_URL=http://expense-service:80
+      - REPORTING_SERVICE_URL=http://reporting-service:80
+    depends_on:
+      - user-service
+      - budget-service
+      - expense-service
+      - reporting-service
+    networks:
+      - budgeting-network
+
+  # User Service
+  user-service:
+    build:
+      context: ./services/user-service
+      dockerfile: Dockerfile
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Server=user-db;Database=UserDB;User Id=sa;Password=YourPassword123!;TrustServerCertificate=true
+    depends_on:
+      - user-db
+    networks:
+      - budgeting-network
+
+  user-db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=YourPassword123!
+    volumes:
+      - user_data:/var/opt/mssql
+    networks:
+      - budgeting-network
+
+  # Budget Service
+  budget-service:
+    build:
+      context: ./services/budget-service
+      dockerfile: Dockerfile
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Server=budget-db;Database=BudgetDB;User Id=sa;Password=YourPassword123!;TrustServerCertificate=true
+      - USER_SERVICE_URL=http://user-service:80
+    depends_on:
+      - budget-db
+    networks:
+      - budgeting-network
+
+  budget-db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=YourPassword123!
+    volumes:
+      - budget_data:/var/opt/mssql
+    networks:
+      - budgeting-network
+
+  # Expense Service
+  expense-service:
+    build:
+      context: ./services/expense-service
+      dockerfile: Dockerfile
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Server=expense-db;Database=ExpenseDB;User Id=sa;Password=YourPassword123!;TrustServerCertificate=true
+      - USER_SERVICE_URL=http://user-service:80
+      - BUDGET_SERVICE_URL=http://budget-service:80
+    depends_on:
+      - expense-db
+    networks:
+      - budgeting-network
+
+  expense-db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=YourPassword123!
+    volumes:
+      - expense_data:/var/opt/mssql
+    networks:
+      - budgeting-network
+
+  # Reporting Service
+  reporting-service:
+    build:
+      context: ./services/reporting-service
+      dockerfile: Dockerfile
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Server=reporting-db;Database=ReportingDB;User Id=sa;Password=YourPassword123!;TrustServerCertificate=true
+      - USER_SERVICE_URL=http://user-service:80
+      - BUDGET_SERVICE_URL=http://budget-service:80
+      - EXPENSE_SERVICE_URL=http://expense-service:80
+    depends_on:
+      - reporting-db
+    networks:
+      - budgeting-network
+
+  reporting-db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=YourPassword123!
+    volumes:
+      - reporting_data:/var/opt/mssql
+    networks:
+      - budgeting-network
+
+  # Message Bus (Redis for this example)
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - budgeting-network
+
+volumes:
+  user_data:
+  budget_data:
+  expense_data:
+  reporting_data:
+  redis_data:
+
+networks:
+  budgeting-network:
+    driver: bridge
