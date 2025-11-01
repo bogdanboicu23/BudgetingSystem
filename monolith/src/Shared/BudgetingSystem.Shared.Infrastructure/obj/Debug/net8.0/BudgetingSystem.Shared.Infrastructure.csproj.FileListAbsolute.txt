@@ -1,0 +1,6 @@
+/Users/bogdanboicu/Desktop/Proiecte/BudgetingSystem/monolith/src/Shared/BudgetingSystem.Shared.Infrastructure/obj/Debug/net8.0/BudgetingSystem.Shared.Infrastructure.csproj.AssemblyReference.cache
+/Users/bogdanboicu/Desktop/Proiecte/BudgetingSystem/monolith/src/Shared/BudgetingSystem.Shared.Infrastructure/obj/Debug/net8.0/BudgetingSystem.Shared.Infrastructure.GeneratedMSBuildEditorConfig.editorconfig
+/Users/bogdanboicu/Desktop/Proiecte/BudgetingSystem/monolith/src/Shared/BudgetingSystem.Shared.Infrastructure/obj/Debug/net8.0/BudgetingSystem.Shared.Infrastructure.AssemblyInfoInputs.cache
+/Users/bogdanboicu/Desktop/Proiecte/BudgetingSystem/monolith/src/Shared/BudgetingSystem.Shared.Infrastructure/obj/Debug/net8.0/BudgetingSystem.Shared.Infrastructure.AssemblyInfo.cs
+/Users/bogdanboicu/Desktop/Proiecte/BudgetingSystem/monolith/src/Shared/BudgetingSystem.Shared.Infrastructure/obj/Debug/net8.0/BudgetingSystem.Shared.Infrastructure.csproj.CoreCompileInputs.cache
+/Users/bogdanboicu/Desktop/Proiecte/BudgetingSystem/monolith/src/Shared/BudgetingSystem.Shared.Infrastructure/obj/Debug/net8.0/BudgetingSystem.Shared.Infrastructure.sourcelink.json

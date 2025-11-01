@@ -5,13 +5,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="001c4b1b-a394-4538-b199-5057ae755ede" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/../../microservices/README.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../../microservices/docker-compose.yml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../../microservices/gateway/ApiGateway.csproj" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../../microservices/gateway/ocelot.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../../microservices/services/user-service/Dockerfile" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../../microservices/services/user-service/Program.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../../microservices/services/user-service/UserService.csproj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/.idea.Modular_Monolith/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.Modular_Monolith/.idea/workspace.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -19,6 +13,11 @@
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
   <component name="Git.Settings">
+    <option name="RECENT_BRANCH_BY_REPOSITORY">
+      <map>
+        <entry key="$PROJECT_DIR$/../.." value="microservices" />
+      </map>
+    </option>
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/../.." />
   </component>
   <component name="GitHubPullRequestSearchHistory">{
@@ -34,6 +33,17 @@
   }
 }</component>
   <component name="HighlightingSettingsPerFile">
+    <setting file="mock://diff.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock://diff.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock://diff.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock://diff.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock://diff.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock://diff.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock://diff.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock://diff.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock://diff.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock://diff.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock://diff.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="mock://diff.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="mock://diff.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="mock://diff.json" root0="FORCE_HIGHLIGHTING" />
@@ -53,20 +63,20 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "ModuleVcsDetector.initialDetectionPerformed": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "git-widget-placeholder": "microservices",
-    "last_opened_file_path": "/Users/bogdanboicu/Desktop/Proiecte/BudgetingSystem",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "nodejs_package_manager_path": "npm",
-    "vue.rearranger.settings.migration": "true"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;modular-monolith&quot;,
+    &quot;last_opened_file_path&quot;: &quot;/Users/bogdanboicu/Desktop/Proiecte/BudgetingSystem&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
-}]]></component>
+}</component>
   <component name="TaskManager">
     <task active="true" id="Default" summary="Default task">
       <changelist id="001c4b1b-a394-4538-b199-5057ae755ede" name="Changes" comment="" />
@@ -75,7 +85,7 @@
       <option name="presentableId" value="Default" />
       <updated>1761680654772</updated>
       <workItem from="1761680655824" duration="63000" />
-      <workItem from="1762015411962" duration="720000" />
+      <workItem from="1762015411962" duration="4245000" />
     </task>
     <servers />
   </component>

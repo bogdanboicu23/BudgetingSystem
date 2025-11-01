@@ -1,0 +1,13 @@
+{
+  "version": 2,
+  "dgSpecHash": "JZbrIix36X8=",
+  "success": true,
+  "projectFilePath": "/Users/bogdanboicu/Desktop/Proiecte/BudgetingSystem/monolith/src/Modules/Users/BudgetingSystem.Users.Application/BudgetingSystem.Users.Application.csproj",
+  "expectedPackageFiles": [
+    "/Users/bogdanboicu/.nuget/packages/bcrypt.net-next/4.0.3/bcrypt.net-next.4.0.3.nupkg.sha512",
+    "/Users/bogdanboicu/.nuget/packages/microsoft.extensions.dependencyinjection.abstractions/8.0.0/microsoft.extensions.dependencyinjection.abstractions.8.0.0.nupkg.sha512",
+    "/Users/bogdanboicu/.nuget/packages/microsoft.netcore.app.ref/8.0.15/microsoft.netcore.app.ref.8.0.15.nupkg.sha512",
+    "/Users/bogdanboicu/.nuget/packages/microsoft.aspnetcore.app.ref/8.0.15/microsoft.aspnetcore.app.ref.8.0.15.nupkg.sha512"
+  ],
+  "logs": []
+}
