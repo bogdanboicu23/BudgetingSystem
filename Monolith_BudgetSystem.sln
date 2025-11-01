@@ -46,11 +46,11 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Monolith_BudgetSystem.Infra
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Transactions", "Transactions", "{61FAA009-2A04-4816-9B04-262BF7DB272A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Transactions.Application", "src\Modules\Transactions.Application\Transactions.Application.csproj", "{C4D9EDCA-7FE8-41CF-8112-39FB86AECAC6}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Transactions.Application", "src\Modules\Transactions\Transactions.Application\Transactions.Application.csproj", "{C4D9EDCA-7FE8-41CF-8112-39FB86AECAC6}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Transactions.Infrastructure", "src\Modules\Transactions.Infrastructure\Transactions.Infrastructure.csproj", "{4A38240F-67D7-450E-8BDA-B8862728AC45}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Transactions.Infrastructure", "src\Modules\Transactions\Transactions.Infrastructure\Transactions.Infrastructure.csproj", "{4A38240F-67D7-450E-8BDA-B8862728AC45}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Transactions.Domain", "src\Modules\Transactions.Domain\Transactions.Domain.csproj", "{7C642DF1-B04A-4B4B-8084-7CE5F7A1A685}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Transactions.Domain", "src\Modules\Transactions\Transactions.Domain\Transactions.Domain.csproj", "{7C642DF1-B04A-4B4B-8084-7CE5F7A1A685}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
