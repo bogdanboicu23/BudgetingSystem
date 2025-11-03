@@ -11,10 +11,13 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="Commands\CreateBudget\" />
       <Folder Include="Commands\DeleteBudget\" />
       <Folder Include="Queries\GetBudgetById\" />
       <Folder Include="Queries\GetBudgetsList\" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="MediatR" Version="13.0.0" />
     </ItemGroup>
 
 </Project>

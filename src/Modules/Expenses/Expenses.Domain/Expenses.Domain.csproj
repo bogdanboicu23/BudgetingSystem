@@ -11,4 +11,8 @@
       <Folder Include="Enums\" />
     </ItemGroup>
 
+    <ItemGroup>
+      <ProjectReference Include="..\..\..\Monolith_BudgetSystem.Shared\Monolith_BudgetSystem.Shared.csproj" />
+    </ItemGroup>
+
 </Project>
