@@ -1,0 +1,394 @@
+@page "/budget-analytics"
+@rendermode InteractiveServer
+@using System.Net.Http.Json
+@inject HttpClient Http
+@inject NavigationManager Navigation
+
+<PageTitle>Budget Analytics - Facade & Decorator Patterns</PageTitle>
+
+<div class="space-y-6">
+    <div class="flex justify-between items-center">
+        <h1 class="text-3xl font-bold text-gray-900">Budget Analytics</h1>
+        <span class="badge-info">Facade & Decorator Patterns Demo</span>
+    </div>
+
+    <!-- Budget Selector -->
+    <div class="bg-white rounded-xl shadow-soft border border-gray-100 p-6">
+        <h2 class="text-xl font-semibold text-gray-900 mb-4">Select Budget for Analysis</h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <button @onclick="() => LoadBudgetAnalytics(Guid.NewGuid())" class="btn-secondary">
+                Demo Budget #1
+            </button>
+            <button @onclick="() => LoadBudgetAnalytics(Guid.NewGuid())" class="btn-secondary">
+                Demo Budget #2
+            </button>
+            <button @onclick="() => LoadBudgetAnalytics(Guid.NewGuid())" class="btn-secondary">
+                Demo Budget #3
+            </button>
+        </div>
+    </div>
+
+    @if (selectedBudgetId != Guid.Empty)
+    {
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Facade Pattern: Enhanced Budget Summary -->
+            <div class="bg-white rounded-xl shadow-soft border border-gray-100 p-6">
+                <div class="flex items-center mb-4">
+                    <div class="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center mr-4">
+                        <svg class="w-6 h-6 text-indigo-600" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-900">Facade Pattern</h3>
+                        <p class="text-gray-600">Unified budget analytics interface</p>
+                    </div>
+                </div>
+
+                <!-- Enhancement Options -->
+                <div class="space-y-3 mb-4">
+                    <div class="flex items-center">
+                        <input @bind="enablePlannedTracking" type="checkbox" id="plannedTracking" class="mr-2">
+                        <label for="plannedTracking" class="text-sm text-gray-700">Enable Planned Tracking</label>
+                    </div>
+                    <div class="flex items-center">
+                        <input @bind="enableSpentTracking" type="checkbox" id="spentTracking" class="mr-2">
+                        <label for="spentTracking" class="text-sm text-gray-700">Enable Spent Tracking</label>
+                    </div>
+                    <div class="flex items-center">
+                        <input @bind="enableRemainingAnalysis" type="checkbox" id="remainingAnalysis" class="mr-2">
+                        <label for="remainingAnalysis" class="text-sm text-gray-700">Enable Remaining Analysis</label>
+                    </div>
+                    <div class="flex items-center">
+                        <input @bind="enableSmartAlerts" type="checkbox" id="smartAlerts" class="mr-2">
+                        <label for="smartAlerts" class="text-sm text-gray-700">Enable Smart Alerts</label>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Planned Adjustment</label>
+                        <input @bind="plannedAdjustment" type="number" class="input-field" placeholder="0" />
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Reserve Amount</label>
+                        <input @bind="reserveAmount" type="number" class="input-field" placeholder="0" />
+                    </div>
+                </div>
+
+                <button @onclick="GenerateBudgetSummary" class="btn-primary w-full mb-4">
+                    Generate Enhanced Summary
+                </button>
+
+                @if (budgetSummary != null)
+                {
+                    <div class="bg-indigo-50 border border-indigo-200 rounded-lg p-4">
+                        <h4 class="font-semibold text-indigo-800 mb-2">@budgetSummary.BudgetName</h4>
+                        <div class="grid grid-cols-2 gap-4 text-sm">
+                            <div>
+                                <span class="text-gray-600">Total:</span>
+                                <span class="font-medium ml-1">$@budgetSummary.TotalAmount.ToString("N2")</span>
+                            </div>
+                            <div>
+                                <span class="text-gray-600">Spent:</span>
+                                <span class="font-medium ml-1">$@budgetSummary.SpentAmount.ToString("N2")</span>
+                            </div>
+                            <div>
+                                <span class="text-gray-600">Remaining:</span>
+                                <span class="font-medium ml-1">$@budgetSummary.RemainingAmount.ToString("N2")</span>
+                            </div>
+                            <div>
+                                <span class="text-gray-600">Status:</span>
+                                <span class="font-medium ml-1">@budgetSummary.Status</span>
+                            </div>
+                        </div>
+                        <div class="mt-2 text-xs text-indigo-700">
+                            Generated: @budgetSummary.GeneratedAt.ToString("yyyy-MM-dd HH:mm")
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <!-- Performance Metrics -->
+            <div class="bg-white rounded-xl shadow-soft border border-gray-100 p-6">
+                <div class="flex items-center mb-4">
+                    <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mr-4">
+                        <svg class="w-6 h-6 text-green-600" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-900">Performance Metrics</h3>
+                        <p class="text-gray-600">Budget performance analysis</p>
+                    </div>
+                </div>
+
+                <button @onclick="GetPerformanceMetrics" class="btn-secondary w-full mb-4">
+                    Analyze Performance
+                </button>
+
+                @if (performanceMetrics != null)
+                {
+                    <div class="space-y-3">
+                        <div class="bg-green-50 border border-green-200 rounded-lg p-3">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-sm font-medium text-green-800">Time Progress</span>
+                                <span class="text-sm font-bold text-green-900">@((performanceMetrics.TimeProgress * 100).ToString("F1"))%</span>
+                            </div>
+                            <div class="w-full bg-green-200 rounded-full h-2">
+                                <div class="bg-green-600 h-2 rounded-full" style="width: @((performanceMetrics.TimeProgress * 100).ToString("F1"))%"></div>
+                            </div>
+                        </div>
+
+                        <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-sm font-medium text-blue-800">Spending Progress</span>
+                                <span class="text-sm font-bold text-blue-900">@((performanceMetrics.SpendingProgress * 100).ToString("F1"))%</span>
+                            </div>
+                            <div class="w-full bg-blue-200 rounded-full h-2">
+                                <div class="bg-blue-600 h-2 rounded-full" style="width: @((performanceMetrics.SpendingProgress * 100).ToString("F1"))%"></div>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="text-center">
+                                <div class="text-2xl font-bold text-gray-900">@performanceMetrics.EfficiencyRatio.ToString("F2")</div>
+                                <div class="text-xs text-gray-600">Efficiency Ratio</div>
+                            </div>
+                            <div class="text-center">
+                                <div class="text-2xl font-bold text-gray-900">@(performanceMetrics.IsOnTrack ? "✓" : "⚠")</div>
+                                <div class="text-xs text-gray-600">On Track</div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <!-- Alerts Section -->
+            <div class="bg-white rounded-xl shadow-soft border border-gray-100 p-6 lg:col-span-2">
+                <div class="flex items-center mb-4">
+                    <div class="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center mr-4">
+                        <svg class="w-6 h-6 text-yellow-600" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-900">Smart Alerts</h3>
+                        <p class="text-gray-600">Decorator pattern enhanced notifications</p>
+                    </div>
+                </div>
+
+                <button @onclick="GetBudgetAlerts" class="btn-warning mb-4">
+                    Check for Alerts
+                </button>
+
+                @if (alerts.Any())
+                {
+                    <div class="space-y-2">
+                        @foreach (var alert in alerts)
+                        {
+                            var alertClass = alert.Type switch
+                            {
+                                "Critical" => "bg-red-50 border-red-200 text-red-800",
+                                "Warning" => "bg-yellow-50 border-yellow-200 text-yellow-800",
+                                _ => "bg-blue-50 border-blue-200 text-blue-800"
+                            };
+
+                            <div class="@alertClass border rounded-lg p-3">
+                                <div class="flex justify-between items-start">
+                                    <span class="font-medium">@alert.Type Alert</span>
+                                    <span class="text-xs">@alert.CreatedAt.ToString("HH:mm")</span>
+                                </div>
+                                <p class="text-sm mt-1">@alert.Message</p>
+                            </div>
+                        }
+                    </div>
+                }
+                else if (alertsLoaded)
+                {
+                    <div class="text-center py-4 text-gray-500">
+                        <svg class="w-12 h-12 mx-auto mb-2" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                        </svg>
+                        <p>No alerts at this time. Budget is performing well!</p>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="text-center py-12">
+            <svg class="w-16 h-16 mx-auto mb-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+            </svg>
+            <h3 class="text-lg font-medium text-gray-900 mb-2">Select a Budget to Analyze</h3>
+            <p class="text-gray-600">Choose a budget from the options above to see the Facade and Decorator patterns in action.</p>
+        </div>
+    }
+</div>
+
+@code {
+    private Guid selectedBudgetId = Guid.Empty;
+    private bool enablePlannedTracking = true;
+    private bool enableSpentTracking = true;
+    private bool enableRemainingAnalysis = true;
+    private bool enableSmartAlerts = true;
+    private decimal plannedAdjustment = 0;
+    private decimal reserveAmount = 50;
+
+    private BudgetSummaryDto? budgetSummary;
+    private PerformanceMetricsDto? performanceMetrics;
+    private List<AlertDto> alerts = new();
+    private bool alertsLoaded = false;
+
+    private void LoadBudgetAnalytics(Guid budgetId)
+    {
+        selectedBudgetId = budgetId;
+        budgetSummary = null;
+        performanceMetrics = null;
+        alerts.Clear();
+        alertsLoaded = false;
+    }
+
+    private async Task GenerateBudgetSummary()
+    {
+        try
+        {
+            var options = new
+            {
+                EnablePlannedTracking = enablePlannedTracking,
+                PlannedAdjustment = plannedAdjustment,
+                PlannedNote = "Demo enhancement",
+                EnableSpentTracking = enableSpentTracking,
+                IncludeProjectedSpending = false,
+                EnableRemainingAnalysis = enableRemainingAnalysis,
+                ReserveAmount = reserveAmount,
+                EnableSmartAlerts = enableSmartAlerts
+            };
+
+            var response = await Http.PostAsJsonAsync($"/api/budgetanalytics/summary/{selectedBudgetId}", options);
+
+            if (response.IsSuccessStatusCode)
+            {
+                budgetSummary = await response.Content.ReadFromJsonAsync<BudgetSummaryDto>();
+            }
+            else
+            {
+                // Fallback mock data
+                budgetSummary = new BudgetSummaryDto
+                {
+                    BudgetId = selectedBudgetId,
+                    BudgetName = "Demo Budget (Local)",
+                    Category = "Monthly",
+                    TotalAmount = 1000m,
+                    PlannedAmount = 950m + plannedAdjustment,
+                    SpentAmount = 720m,
+                    RemainingAmount = 280m - plannedAdjustment,
+                    Status = "OnTrack",
+                    DisplayInfo = "Enhanced with Facade pattern",
+                    GeneratedAt = DateTime.Now
+                };
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error generating summary: {ex.Message}");
+        }
+    }
+
+    private async Task GetPerformanceMetrics()
+    {
+        try
+        {
+            var response = await Http.GetAsync($"/api/budgetanalytics/performance/{selectedBudgetId}");
+
+            if (response.IsSuccessStatusCode)
+            {
+                performanceMetrics = await response.Content.ReadFromJsonAsync<PerformanceMetricsDto>();
+            }
+            else
+            {
+                // Fallback mock data
+                performanceMetrics = new PerformanceMetricsDto
+                {
+                    BudgetId = selectedBudgetId,
+                    TimeProgress = 0.65,
+                    SpendingProgress = 0.72,
+                    EfficiencyRatio = 1.11,
+                    DailySpendingRate = 24.5,
+                    ProjectedEndAmount = 980m,
+                    IsOnTrack = true
+                };
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error getting performance metrics: {ex.Message}");
+        }
+    }
+
+    private async Task GetBudgetAlerts()
+    {
+        try
+        {
+            var response = await Http.GetAsync($"/api/budgetanalytics/alerts/{selectedBudgetId}");
+
+            if (response.IsSuccessStatusCode)
+            {
+                alerts = await response.Content.ReadFromJsonAsync<List<AlertDto>>() ?? new();
+            }
+            else
+            {
+                // Fallback mock data
+                alerts = new List<AlertDto>
+                {
+                    new AlertDto { Type = "Info", Message = "Budget is on track for the month", CreatedAt = DateTime.Now.AddMinutes(-5) },
+                    new AlertDto { Type = "Warning", Message = "Spending rate is slightly above average", CreatedAt = DateTime.Now.AddMinutes(-15) }
+                };
+            }
+            alertsLoaded = true;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error getting alerts: {ex.Message}");
+            alertsLoaded = true;
+        }
+    }
+
+    // DTOs
+    public class BudgetSummaryDto
+    {
+        public Guid BudgetId { get; set; }
+        public string BudgetName { get; set; } = "";
+        public string Category { get; set; } = "";
+        public decimal TotalAmount { get; set; }
+        public decimal PlannedAmount { get; set; }
+        public decimal SpentAmount { get; set; }
+        public decimal RemainingAmount { get; set; }
+        public string Status { get; set; } = "";
+        public string DisplayInfo { get; set; } = "";
+        public DateTime PeriodStart { get; set; }
+        public DateTime PeriodEnd { get; set; }
+        public DateTime GeneratedAt { get; set; }
+    }
+
+    public class PerformanceMetricsDto
+    {
+        public Guid BudgetId { get; set; }
+        public double TimeProgress { get; set; }
+        public double SpendingProgress { get; set; }
+        public double EfficiencyRatio { get; set; }
+        public double DailySpendingRate { get; set; }
+        public decimal ProjectedEndAmount { get; set; }
+        public bool IsOnTrack { get; set; }
+    }
+
+    public class AlertDto
+    {
+        public string Type { get; set; } = "";
+        public string Message { get; set; } = "";
+        public Guid BudgetId { get; set; }
+        public DateTime CreatedAt { get; set; }
+    }
+}

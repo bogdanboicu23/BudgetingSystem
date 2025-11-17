@@ -13,4 +13,12 @@
       <Folder Include="Queries\GetIncomeList\" />
     </ItemGroup>
 
+    <ItemGroup>
+      <ProjectReference Include="..\Incomes.Domain\Incomes.Domain.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="MediatR" Version="13.0.0" />
+    </ItemGroup>
+
 </Project>

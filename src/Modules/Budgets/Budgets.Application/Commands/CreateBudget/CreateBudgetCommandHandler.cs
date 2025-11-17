@@ -1,5 +1,6 @@
 using MediatR;
 using Budgets.Domain.Entities;
+using Budgets.Domain.Repositories;
 
 namespace Budgets.Application.Commands.CreateBudget;
 
@@ -21,19 +22,9 @@ public class CreateBudgetCommandHandler : IRequestHandler<CreateBudgetCommand, G
             request.PeriodEnd
         );
 
-        await _budgetRepository.AddAsync(budget);
-        await _budgetRepository.SaveChangesAsync();
+        await _budgetRepository.AddAsync(budget, cancellationToken);
 
         return budget.Id;
     }
 }
 
-public interface IBudgetRepository
-{
-    Task<Budget?> GetByIdAsync(Guid id);
-    Task<IList<Budget>> GetAllAsync();
-    Task AddAsync(Budget budget);
-    Task UpdateAsync(Budget budget);
-    Task DeleteAsync(Budget budget);
-    Task SaveChangesAsync();
-}

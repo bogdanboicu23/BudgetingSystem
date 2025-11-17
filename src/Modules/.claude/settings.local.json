@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//Users/bogdanboicu/Desktop/Proiecte/BudgetingSystem/monolith/Monolith_BudgetSystem/src/Monolith_BudgetSystem.Client/Components/**)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

@@ -13,4 +13,13 @@
       <Folder Include="Queries\GetExpensesList\" />
     </ItemGroup>
 
+    <ItemGroup>
+      <ProjectReference Include="..\..\Budgets\Budgets.Domain\Budgets.Domain.csproj" />
+      <ProjectReference Include="..\Expenses.Domain\Expenses.Domain.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="MediatR" Version="13.0.0" />
+    </ItemGroup>
+
 </Project>

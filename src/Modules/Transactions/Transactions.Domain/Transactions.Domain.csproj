@@ -12,8 +12,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\..\Monolith_BudgetSystem.Infrastructure\Monolith_BudgetSystem.Infrastructure.csproj" />
-      <ProjectReference Include="..\..\Monolith_BudgetSystem.Shared\Monolith_BudgetSystem.Shared.csproj" />
+      <ProjectReference Include="..\..\..\Monolith_BudgetSystem.Shared\Monolith_BudgetSystem.Shared.csproj" />
     </ItemGroup>
 
 </Project>

@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Budget System - Design Patterns Demo</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .pattern-section {
+            background: white;
+            margin: 20px 0;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .pattern-title {
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            min-width: 150px;
+        }
+        .control-group label {
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #34495e;
+        }
+        input, select, button {
+            padding: 10px;
+            border: 1px solid #bdc3c7;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        .results {
+            background-color: #ecf0f1;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 15px;
+            min-height: 100px;
+            overflow-x: auto;
+        }
+        .transaction-item {
+            background: white;
+            margin: 10px 0;
+            padding: 15px;
+            border-radius: 5px;
+            border-left: 4px solid #3498db;
+        }
+        .warning {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+        .success {
+            color: #27ae60;
+            font-weight: bold;
+        }
+        .strategy-comparison {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        .strategy-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+        }
+        pre {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Personal Budget System - Design Patterns Demo</h1>
+        <p>This demo showcases 4 behavioral design patterns implemented in the budgeting system.</p>
+
+        <!-- Strategy Pattern Demo -->
+        <div class="pattern-section">
+            <h2 class="pattern-title">1. Strategy Pattern - Budget Calculation</h2>
+            <p>Different algorithms to calculate available budget amounts.</p>
+
+            <div class="controls">
+                <div class="control-group">
+                    <label>Budget ID:</label>
+                    <input type="text" id="budgetId" value="550e8400-e29b-41d4-a716-446655440000">
+                </div>
+                <div class="control-group">
+                    <label>Current Spending:</label>
+                    <input type="number" id="currentSpending" value="750" step="0.01">
+                </div>
+                <div class="control-group">
+                    <label>Strategy:</label>
+                    <select id="strategyType">
+                        <option value="fixed">Fixed Budget</option>
+                        <option value="rolling">Rolling Budget</option>
+                        <option value="percentagebased">Percentage Based</option>
+                    </select>
+                </div>
+                <button onclick="calculateBudget()">Calculate</button>
+                <button onclick="compareStrategies()">Compare All</button>
+            </div>
+
+            <div id="budgetResults" class="results">Click "Calculate" to see budget calculation results...</div>
+        </div>
+
+        <!-- Chain of Responsibility Demo -->
+        <div class="pattern-section">
+            <h2 class="pattern-title">2. Chain of Responsibility - Bank Transaction Processing</h2>
+            <p>Automatically categorize bank transactions through a chain of handlers.</p>
+
+            <div class="controls">
+                <div class="control-group">
+                    <label>Account ID:</label>
+                    <input type="text" id="accountId" value="account123">
+                </div>
+                <div class="control-group">
+                    <label>From Date:</label>
+                    <input type="date" id="fromDate">
+                </div>
+                <div class="control-group">
+                    <label>To Date:</label>
+                    <input type="date" id="toDate">
+                </div>
+                <button onclick="processTransactions()">Process Transactions</button>
+                <button onclick="getMockData()">Get Mock Data</button>
+            </div>
+
+            <div id="transactionResults" class="results">Click "Process Transactions" to see categorized transactions...</div>
+        </div>
+
+        <!-- Template Method Demo -->
+        <div class="pattern-section">
+            <h2 class="pattern-title">3. Template Method - Report Generation</h2>
+            <p>Generate different types of reports using a common template structure.</p>
+
+            <div class="controls">
+                <div class="control-group">
+                    <label>User ID:</label>
+                    <input type="text" id="userId" value="123e4567-e89b-12d3-a456-426614174000">
+                </div>
+                <div class="control-group">
+                    <label>Start Date:</label>
+                    <input type="date" id="reportStartDate">
+                </div>
+                <div class="control-group">
+                    <label>End Date:</label>
+                    <input type="date" id="reportEndDate">
+                </div>
+                <button onclick="generateSummaryReport()">Summary Report</button>
+                <button onclick="generateDetailedReport()">Detailed Report</button>
+                <button onclick="compareReports()">Compare Reports</button>
+            </div>
+
+            <div id="reportResults" class="results">Click a report button to generate reports...</div>
+        </div>
+
+        <!-- Observer Pattern Demo -->
+        <div class="pattern-section">
+            <h2 class="pattern-title">4. Observer Pattern - Budget Notifications</h2>
+            <p>Real-time notifications when budget limits are exceeded (integrated with Strategy Pattern).</p>
+
+            <div id="observerResults" class="results">
+                <p><strong>Budget notifications will appear here automatically when you use the Strategy Pattern above.</strong></p>
+                <p>Try setting high spending amounts to trigger warnings and alerts!</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Set default dates
+        document.getElementById('fromDate').value = new Date(Date.now() - 30*24*60*60*1000).toISOString().split('T')[0];
+        document.getElementById('toDate').value = new Date().toISOString().split('T')[0];
+        document.getElementById('reportStartDate').value = new Date(Date.now() - 30*24*60*60*1000).toISOString().split('T')[0];
+        document.getElementById('reportEndDate').value = new Date().toISOString().split('T')[0];
+
+        async function calculateBudget() {
+            const budgetId = document.getElementById('budgetId').value;
+            const currentSpending = parseFloat(document.getElementById('currentSpending').value);
+            const strategyType = document.getElementById('strategyType').value;
+
+            try {
+                const response = await fetch('/api/budgetstrategies/calculate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        budgetId: budgetId,
+                        currentSpending: currentSpending,
+                        strategyType: strategyType
+                    })
+                });
+
+                const result = await response.json();
+
+                let html = `<h3>Budget Calculation Result</h3>`;
+                if (response.ok) {
+                    html += `
+                        <div class="strategy-card">
+                            <h4>${result.strategyUsed}</h4>
+                            <p><strong>Total Budget:</strong> $${result.totalBudget.toFixed(2)}</p>
+                            <p><strong>Current Spending:</strong> $${result.currentSpending.toFixed(2)}</p>
+                            <p><strong>Available Amount:</strong> $${result.availableAmount.toFixed(2)}</p>
+                            <p><strong>Spent:</strong> ${result.spentPercentage.toFixed(1)}%</p>
+                            ${result.warnings.length > 0 ? `<p class="warning">⚠️ ${result.warnings.join(', ')}</p>` : '<p class="success">✅ Budget on track</p>'}
+                        </div>
+                    `;
+                } else {
+                    html += `<p class="warning">Error: ${result}</p>`;
+                }
+
+                document.getElementById('budgetResults').innerHTML = html;
+            } catch (error) {
+                document.getElementById('budgetResults').innerHTML = `<p class="warning">Error: ${error.message}</p>`;
+            }
+        }
+
+        async function compareStrategies() {
+            const budgetId = document.getElementById('budgetId').value;
+            const currentSpending = parseFloat(document.getElementById('currentSpending').value);
+
+            try {
+                const response = await fetch(`/api/budgetstrategies/${budgetId}/strategies/compare?currentSpending=${currentSpending}`);
+                const results = await response.json();
+
+                let html = '<h3>Strategy Comparison</h3><div class="strategy-comparison">';
+
+                if (response.ok) {
+                    results.forEach(result => {
+                        html += `
+                            <div class="strategy-card">
+                                <h4>${result.strategyUsed}</h4>
+                                <p><strong>Available:</strong> $${result.availableAmount.toFixed(2)}</p>
+                                <p><strong>Spent:</strong> ${result.spentPercentage.toFixed(1)}%</p>
+                            </div>
+                        `;
+                    });
+                } else {
+                    html += `<p class="warning">Error: ${results}</p>`;
+                }
+
+                html += '</div>';
+                document.getElementById('budgetResults').innerHTML = html;
+            } catch (error) {
+                document.getElementById('budgetResults').innerHTML = `<p class="warning">Error: ${error.message}</p>`;
+            }
+        }
+
+        async function processTransactions() {
+            const accountId = document.getElementById('accountId').value;
+            const fromDate = document.getElementById('fromDate').value;
+            const toDate = document.getElementById('toDate').value;
+
+            try {
+                const response = await fetch('/api/banktransactions/process', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        accountId: accountId,
+                        fromDate: fromDate,
+                        toDate: toDate
+                    })
+                });
+
+                const result = await response.json();
+
+                let html = '<h3>Processed Transactions</h3>';
+
+                if (response.ok) {
+                    html += `
+                        <div class="strategy-card">
+                            <h4>Summary</h4>
+                            <p><strong>Total Transactions:</strong> ${result.summary.totalTransactions}</p>
+                            <p><strong>Total Income:</strong> $${result.summary.totalIncome.toFixed(2)}</p>
+                            <p><strong>Total Expenses:</strong> $${result.summary.totalExpenses.toFixed(2)}</p>
+                            <p><strong>Total Transfers:</strong> $${result.summary.totalTransfers.toFixed(2)}</p>
+                        </div>
+                    `;
+
+                    html += '<h4>Transactions:</h4>';
+                    result.processedTransactions.slice(0, 10).forEach(transaction => {
+                        html += `
+                            <div class="transaction-item">
+                                <strong>$${transaction.amount.toFixed(2)}</strong> - ${transaction.merchantName}
+                                <br><small>${transaction.description}</small>
+                                <br><span class="success">Category: ${transaction.categoryName} (${transaction.classification})</span>
+                            </div>
+                        `;
+                    });
+
+                    if (result.processedTransactions.length > 10) {
+                        html += `<p><em>... and ${result.processedTransactions.length - 10} more transactions</em></p>`;
+                    }
+                } else {
+                    html += `<p class="warning">Error: ${result}</p>`;
+                }
+
+                document.getElementById('transactionResults').innerHTML = html;
+            } catch (error) {
+                document.getElementById('transactionResults').innerHTML = `<p class="warning">Error: ${error.message}</p>`;
+            }
+        }
+
+        async function getMockData() {
+            const accountId = document.getElementById('accountId').value;
+
+            try {
+                const response = await fetch(`/api/banktransactions/mock-data/${accountId}`);
+                const transactions = await response.json();
+
+                let html = '<h3>Mock Bank Data (Unprocessed)</h3>';
+
+                if (response.ok) {
+                    transactions.slice(0, 10).forEach(transaction => {
+                        html += `
+                            <div class="transaction-item">
+                                <strong>$${transaction.amount.toFixed(2)}</strong> - ${transaction.merchantName}
+                                <br><small>${transaction.description}</small>
+                                <br><span>Type: ${transaction.transactionType}</span>
+                            </div>
+                        `;
+                    });
+
+                    if (transactions.length > 10) {
+                        html += `<p><em>... and ${transactions.length - 10} more transactions available</em></p>`;
+                    }
+                } else {
+                    html += `<p class="warning">Error: ${transactions}</p>`;
+                }
+
+                document.getElementById('transactionResults').innerHTML = html;
+            } catch (error) {
+                document.getElementById('transactionResults').innerHTML = `<p class="warning">Error: ${error.message}</p>`;
+            }
+        }
+
+        async function generateSummaryReport() {
+            const userId = document.getElementById('userId').value;
+            const startDate = document.getElementById('reportStartDate').value;
+            const endDate = document.getElementById('reportEndDate').value;
+
+            try {
+                const response = await fetch(`/api/budgetreports/summary/${userId}?startDate=${startDate}&endDate=${endDate}`);
+                const result = await response.json();
+
+                let html = '<h3>Summary Report</h3>';
+
+                if (response.ok) {
+                    html += `<pre>${result.report}</pre>`;
+                } else {
+                    html += `<p class="warning">Error: ${result}</p>`;
+                }
+
+                document.getElementById('reportResults').innerHTML = html;
+            } catch (error) {
+                document.getElementById('reportResults').innerHTML = `<p class="warning">Error: ${error.message}</p>`;
+            }
+        }
+
+        async function generateDetailedReport() {
+            const userId = document.getElementById('userId').value;
+            const startDate = document.getElementById('reportStartDate').value;
+            const endDate = document.getElementById('reportEndDate').value;
+
+            try {
+                const response = await fetch(`/api/budgetreports/detailed/${userId}?startDate=${startDate}&endDate=${endDate}`);
+                const result = await response.json();
+
+                let html = '<h3>Detailed Report</h3>';
+
+                if (response.ok) {
+                    html += `<pre>${result.report}</pre>`;
+                } else {
+                    html += `<p class="warning">Error: ${result}</p>`;
+                }
+
+                document.getElementById('reportResults').innerHTML = html;
+            } catch (error) {
+                document.getElementById('reportResults').innerHTML = `<p class="warning">Error: ${error.message}</p>`;
+            }
+        }
+
+        async function compareReports() {
+            const userId = document.getElementById('userId').value;
+            const startDate = document.getElementById('reportStartDate').value;
+            const endDate = document.getElementById('reportEndDate').value;
+
+            try {
+                const response = await fetch(`/api/budgetreports/compare/${userId}?startDate=${startDate}&endDate=${endDate}`);
+                const result = await response.json();
+
+                let html = '<h3>Report Comparison</h3>';
+
+                if (response.ok) {
+                    html += `
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                            <div>
+                                <h4>Summary Report</h4>
+                                <pre>${result.summaryReport}</pre>
+                            </div>
+                            <div>
+                                <h4>Detailed Report</h4>
+                                <pre>${result.detailedReport}</pre>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    html += `<p class="warning">Error: ${result}</p>`;
+                }
+
+                document.getElementById('reportResults').innerHTML = html;
+            } catch (error) {
+                document.getElementById('reportResults').innerHTML = `<p class="warning">Error: ${error.message}</p>`;
+            }
+        }
+    </script>
+</body>
+</html>

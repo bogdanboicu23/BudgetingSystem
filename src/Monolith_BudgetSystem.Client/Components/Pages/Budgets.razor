@@ -1,0 +1,669 @@
+@page "/budgets"
+@rendermode InteractiveServer
+@using System.Net.Http.Json
+@inject HttpClient Http
+@inject NavigationManager Navigation
+
+<PageTitle>Budget Management</PageTitle>
+
+<div class="space-y-6">
+    <div class="flex justify-between items-center">
+        <h1 class="text-3xl font-bold text-gray-900">Budget Management</h1>
+        <div class="flex space-x-3">
+            <button @onclick="CheckBudgetAlerts" class="@(hasActiveAlerts ? "bg-red-600 hover:bg-red-700" : "bg-gray-600 hover:bg-gray-700") text-white px-4 py-2 rounded-lg">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-5 5v-5zM12 17l-7-7 7-7v5h6v4z"/>
+                </svg>
+                @(hasActiveAlerts ? $"{activeNotifications.Count} Alerts" : "Check Alerts")
+            </button>
+            <button @onclick="() => ShowCreateModal = true" class="btn-primary">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                </svg>
+                Create New Budget
+            </button>
+        </div>
+    </div>
+
+    <!-- Real-time Notifications (Observer Pattern) -->
+    @if (activeNotifications.Any())
+    {
+        <div class="bg-white rounded-xl shadow-soft border border-gray-100 p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-lg font-semibold text-gray-900">Budget Alerts</h2>
+                <div class="flex items-center space-x-2">
+                    <span class="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">Observer Pattern</span>
+                    <button @onclick="DismissAllAlerts" class="text-sm text-gray-600 hover:text-gray-800">
+                        Dismiss All
+                    </button>
+                </div>
+            </div>
+            <div class="space-y-3">
+                @foreach (var notification in activeNotifications.Take(5))
+                {
+                    <div class="@GetNotificationClass(notification.Type) border rounded-lg p-3">
+                        <div class="flex justify-between items-start">
+                            <div class="flex-1">
+                                <div class="flex items-center">
+                                    <span class="font-medium">@notification.Type Alert</span>
+                                    <span class="ml-2 text-xs bg-white bg-opacity-50 px-2 py-0.5 rounded">@notification.BudgetName</span>
+                                </div>
+                                <p class="text-sm mt-1">@notification.Message</p>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <span class="text-xs">@notification.CreatedAt.ToString("HH:mm")</span>
+                                <button @onclick="() => DismissAlert(notification.Id)" class="text-gray-400 hover:text-gray-600">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+
+    <!-- Budgets Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        @if (budgets.Any())
+        {
+            @foreach (var budget in budgets)
+            {
+                <div class="bg-white rounded-xl shadow-soft border border-gray-100 p-6">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-900">@budget.Name</h3>
+                            <p class="text-sm text-gray-500">@budget.PeriodStart.ToString("MMM dd") - @budget.PeriodEnd.ToString("MMM dd, yyyy")</p>
+                        </div>
+                        <div class="flex space-x-2">
+                            <button @onclick="() => EditBudget(budget)" class="text-blue-600 hover:text-blue-700">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                                </svg>
+                            </button>
+                            <button @onclick="() => DeleteBudget(budget.Id)" class="text-red-600 hover:text-red-700">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Budget Summary -->
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm text-gray-600">Planned Income</span>
+                            <span class="font-medium text-green-600">$@budget.PlannedIncomeAmount.ToString("N2")</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm text-gray-600">Planned Expenses</span>
+                            <span class="font-medium text-gray-900">$@budget.Amount.ToString("N2")</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm text-gray-600">Actual Spent</span>
+                            <span class="font-medium text-red-600">$@budget.SpentAmount.ToString("N2")</span>
+                        </div>
+                        <div class="border-t pt-2">
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm font-medium text-gray-700">Remaining</span>
+                                <span class="font-bold @(GetRemainingAmount(budget) >= 0 ? "text-green-600" : "text-red-600")">
+                                    $@GetRemainingAmount(budget).ToString("N2")
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Progress Bar -->
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div class="@GetProgressBarColor(budget) h-2 rounded-full transition-all"
+                                 style="width: @GetProgressPercentage(budget)%"></div>
+                        </div>
+
+                        <!-- Status Badge -->
+                        <div class="flex justify-between items-center">
+                            <span class="@GetStatusBadgeClass(budget)">@GetStatusText(budget)</span>
+                            <button @onclick="() => ViewDetails(budget)" class="text-sm text-blue-600 hover:text-blue-700">
+                                View Details →
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+        else
+        {
+            <div class="col-span-full text-center py-12">
+                <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                </svg>
+                <h3 class="mt-2 text-sm font-medium text-gray-900">No budgets</h3>
+                <p class="mt-1 text-sm text-gray-500">Get started by creating a new budget.</p>
+                <div class="mt-6">
+                    <button @onclick="() => ShowCreateModal = true" class="btn-primary">
+                        Create New Budget
+                    </button>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Create/Edit Budget Modal -->
+@if (ShowCreateModal || ShowEditModal)
+{
+    <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-xl shadow-xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-semibold text-gray-900">
+                    @(ShowCreateModal ? "Create New Budget" : "Edit Budget")
+                </h2>
+                <button @onclick="CloseModal" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+
+            <form @onsubmit="SaveBudget" @onsubmit:preventDefault="true">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Budget Name</label>
+                        <input @bind="CurrentBudget.Name" type="text" class="input-field" placeholder="Monthly Budget" required />
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
+                            <input @bind="CurrentBudget.PeriodStart" type="date" class="input-field" required />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">End Date</label>
+                            <input @bind="CurrentBudget.PeriodEnd" type="date" class="input-field" required />
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Budget Amount</label>
+                        <input @bind="CurrentBudget.Amount" type="number" step="0.01" class="input-field" placeholder="0.00" required />
+                    </div>
+
+                    <!-- Strategy Pattern Integration -->
+                    <div class="border-t pt-4">
+                        <h4 class="text-sm font-semibold text-gray-900 mb-3">Budget Calculation Strategy</h4>
+                        <div class="space-y-3">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Calculation Method</label>
+                                <select @bind="selectedBudgetStrategy" class="input-field">
+                                    <option value="fixed">Fixed Budget - Set amount for entire period</option>
+                                    <option value="percentage">Percentage Based - Based on income percentage</option>
+                                    <option value="rolling">Rolling Budget - Adjusts based on previous period</option>
+                                </select>
+                            </div>
+
+                            @if (selectedBudgetStrategy == "percentage")
+                            {
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Income Percentage</label>
+                                    <div class="flex items-center space-x-2">
+                                        <input @bind="incomePercentage" type="number" min="1" max="100" class="input-field flex-1" placeholder="20" />
+                                        <span class="text-sm text-gray-500">% of income</span>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Expected Monthly Income</label>
+                                    <input @bind="expectedIncome" type="number" step="0.01" class="input-field" placeholder="5000.00" />
+                                </div>
+                            }
+                            else if (selectedBudgetStrategy == "rolling")
+                            {
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Rolling Period (months)</label>
+                                    <input @bind="rollingPeriodMonths" type="number" min="1" max="12" class="input-field" placeholder="3" />
+                                </div>
+                            }
+
+                            <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                                <button type="button" @onclick="CalculateRecommendedAmount" class="text-sm text-blue-700 hover:text-blue-800 font-medium">
+                                    💡 Calculate Recommended Amount
+                                </button>
+                                @if (!string.IsNullOrEmpty(recommendedAmountText))
+                                {
+                                    <div class="mt-2 text-sm text-blue-800">
+                                        <strong>Recommended:</strong> @recommendedAmountText
+                                        <button type="button" @onclick="ApplyRecommendedAmount" class="ml-2 text-blue-700 underline hover:text-blue-800">
+                                            Apply
+                                        </button>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex justify-end space-x-3 mt-6 pt-4 border-t">
+                    <button type="button" @onclick="CloseModal" class="btn-secondary">
+                        Cancel
+                    </button>
+                    <button type="submit" class="btn-primary">
+                        @(ShowCreateModal ? "Create Budget" : "Update Budget")
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+}
+
+@code {
+    private List<BudgetDto> budgets = new();
+    private bool ShowCreateModal = false;
+    private bool ShowEditModal = false;
+    private BudgetDto CurrentBudget = new();
+
+    // Strategy Pattern Integration
+    private string selectedBudgetStrategy = "fixed";
+    private int incomePercentage = 20;
+    private decimal expectedIncome = 5000m;
+    private int rollingPeriodMonths = 3;
+    private string recommendedAmountText = "";
+    private decimal recommendedAmount = 0;
+
+    // Observer Pattern Integration
+    private List<BudgetNotification> activeNotifications = new();
+    private bool hasActiveAlerts = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadBudgets();
+        await CheckBudgetAlerts();
+    }
+
+    private async Task LoadBudgets()
+    {
+        try
+        {
+            // For now, use mock data. Later connect to API
+            budgets = new List<BudgetDto>
+            {
+                new BudgetDto
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "November Budget",
+                    PeriodStart = new DateTime(2024, 11, 1),
+                    PeriodEnd = new DateTime(2024, 11, 30),
+                    Amount = 2500,
+                    SpentAmount = 1850,
+                    PlannedIncomeAmount = 3500,
+                    ActualIncomeAmount = 3500,
+                    Status = "OnTrack"
+                },
+                new BudgetDto
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "Weekly Groceries",
+                    PeriodStart = new DateTime(2024, 11, 11),
+                    PeriodEnd = new DateTime(2024, 11, 17),
+                    Amount = 300,
+                    SpentAmount = 285,
+                    PlannedIncomeAmount = 0,
+                    ActualIncomeAmount = 0,
+                    Status = "Warning"
+                },
+                new BudgetDto
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "Holiday Savings",
+                    PeriodStart = new DateTime(2024, 11, 1),
+                    PeriodEnd = new DateTime(2024, 12, 25),
+                    Amount = 1000,
+                    SpentAmount = 1200,
+                    PlannedIncomeAmount = 1500,
+                    ActualIncomeAmount = 1400,
+                    Status = "OverBudget"
+                }
+            };
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading budgets: {ex.Message}");
+        }
+    }
+
+    private async Task SaveBudget()
+    {
+        try
+        {
+            if (ShowCreateModal)
+            {
+                // Create new budget
+                CurrentBudget.Id = Guid.NewGuid();
+                budgets.Add(CurrentBudget);
+            }
+            else
+            {
+                // Update existing budget
+                var existingIndex = budgets.FindIndex(b => b.Id == CurrentBudget.Id);
+                if (existingIndex >= 0)
+                {
+                    budgets[existingIndex] = CurrentBudget;
+                }
+            }
+
+            CloseModal();
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error saving budget: {ex.Message}");
+        }
+    }
+
+    private void EditBudget(BudgetDto budget)
+    {
+        CurrentBudget = new BudgetDto
+        {
+            Id = budget.Id,
+            Name = budget.Name,
+            PeriodStart = budget.PeriodStart,
+            PeriodEnd = budget.PeriodEnd,
+            Amount = budget.Amount,
+            SpentAmount = budget.SpentAmount,
+            PlannedIncomeAmount = budget.PlannedIncomeAmount,
+            ActualIncomeAmount = budget.ActualIncomeAmount,
+            Status = budget.Status
+        };
+        ShowEditModal = true;
+    }
+
+    private async Task DeleteBudget(Guid budgetId)
+    {
+        try
+        {
+            budgets.RemoveAll(b => b.Id == budgetId);
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error deleting budget: {ex.Message}");
+        }
+    }
+
+    private void ViewDetails(BudgetDto budget)
+    {
+        Navigation.NavigateTo($"/budgets/{budget.Id}");
+    }
+
+    private void CloseModal()
+    {
+        ShowCreateModal = false;
+        ShowEditModal = false;
+        CurrentBudget = new BudgetDto();
+        // Reset strategy fields
+        selectedBudgetStrategy = "fixed";
+        recommendedAmountText = "";
+        recommendedAmount = 0;
+    }
+
+    // Strategy Pattern Methods
+    private async Task CalculateRecommendedAmount()
+    {
+        try
+        {
+            var request = new
+            {
+                BudgetId = Guid.NewGuid(),
+                StrategyType = selectedBudgetStrategy,
+                TotalBudget = selectedBudgetStrategy == "percentage" ? expectedIncome * incomePercentage / 100 : CurrentBudget.Amount,
+                CurrentSpending = 0m // New budget
+            };
+
+            var response = await Http.PostAsJsonAsync("/api/budgets/calculate", request);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var result = await response.Content.ReadFromJsonAsync<BudgetCalculationResult>();
+                if (result != null)
+                {
+                    recommendedAmount = result.AvailableAmount;
+                    recommendedAmountText = $"${recommendedAmount:F2} ({result.StrategyUsed})";
+                }
+            }
+            else
+            {
+                // Fallback calculation
+                recommendedAmount = selectedBudgetStrategy switch
+                {
+                    "percentage" => expectedIncome * incomePercentage / 100,
+                    "rolling" => CurrentBudget.Amount * 0.95m, // 5% buffer for rolling
+                    _ => CurrentBudget.Amount
+                };
+                recommendedAmountText = $"${recommendedAmount:F2} (Local calculation)";
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error calculating recommended amount: {ex.Message}");
+            recommendedAmountText = "Unable to calculate recommendation";
+        }
+    }
+
+    private void ApplyRecommendedAmount()
+    {
+        CurrentBudget.Amount = recommendedAmount;
+    }
+
+    // DTO for API response
+    public class BudgetCalculationResult
+    {
+        public decimal AvailableAmount { get; set; }
+        public decimal TotalBudget { get; set; }
+        public decimal CurrentSpending { get; set; }
+        public string StrategyUsed { get; set; } = "";
+        public decimal SpentPercentage { get; set; }
+        public List<string>? Warnings { get; set; }
+    }
+
+    private decimal GetRemainingAmount(BudgetDto budget)
+    {
+        return budget.Amount - budget.SpentAmount;
+    }
+
+    private double GetProgressPercentage(BudgetDto budget)
+    {
+        return budget.Amount > 0 ? Math.Min(100, (double)(budget.SpentAmount / budget.Amount) * 100) : 0;
+    }
+
+    private string GetProgressBarColor(BudgetDto budget)
+    {
+        var percentage = GetProgressPercentage(budget);
+        return percentage switch
+        {
+            >= 100 => "bg-red-500",
+            >= 90 => "bg-yellow-500",
+            >= 75 => "bg-orange-500",
+            _ => "bg-green-500"
+        };
+    }
+
+    private string GetStatusBadgeClass(BudgetDto budget)
+    {
+        return budget.Status switch
+        {
+            "OnTrack" => "badge-success",
+            "Warning" => "badge-warning",
+            "OverBudget" => "badge-danger",
+            _ => "badge-success"
+        };
+    }
+
+    private string GetStatusText(BudgetDto budget)
+    {
+        return budget.Status switch
+        {
+            "OnTrack" => "On Track",
+            "Warning" => "Warning",
+            "OverBudget" => "Over Budget",
+            _ => "Unknown"
+        };
+    }
+
+    // Observer Pattern Methods
+    private async Task CheckBudgetAlerts()
+    {
+        try
+        {
+            activeNotifications.Clear();
+
+            foreach (var budget in budgets)
+            {
+                // Check for budget alerts using the Observer pattern
+                var response = await Http.GetAsync($"/api/budgetanalytics/alerts/{budget.Id}");
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var alerts = await response.Content.ReadFromJsonAsync<List<BudgetAlertDto>>();
+                    if (alerts != null)
+                    {
+                        foreach (var alert in alerts)
+                        {
+                            activeNotifications.Add(new BudgetNotification
+                            {
+                                Id = Guid.NewGuid(),
+                                BudgetId = budget.Id,
+                                BudgetName = budget.Name,
+                                Type = alert.Type,
+                                Message = alert.Message,
+                                CreatedAt = alert.CreatedAt
+                            });
+                        }
+                    }
+                }
+                else
+                {
+                    // Generate mock alerts based on budget status
+                    GenerateMockAlertsForBudget(budget);
+                }
+            }
+
+            hasActiveAlerts = activeNotifications.Any();
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error checking budget alerts: {ex.Message}");
+            // Generate mock alerts for demo
+            GenerateMockAlerts();
+        }
+    }
+
+    private void GenerateMockAlertsForBudget(BudgetDto budget)
+    {
+        var spentPercentage = budget.Amount > 0 ? (budget.SpentAmount / budget.Amount) * 100 : 0;
+
+        if (budget.Status == "OverBudget")
+        {
+            activeNotifications.Add(new BudgetNotification
+            {
+                Id = Guid.NewGuid(),
+                BudgetId = budget.Id,
+                BudgetName = budget.Name,
+                Type = "Critical",
+                Message = $"Budget exceeded by ${budget.SpentAmount - budget.Amount:F2}",
+                CreatedAt = DateTime.Now.AddMinutes(-Random.Shared.Next(5, 30))
+            });
+        }
+        else if (budget.Status == "Warning" || spentPercentage > 80)
+        {
+            activeNotifications.Add(new BudgetNotification
+            {
+                Id = Guid.NewGuid(),
+                BudgetId = budget.Id,
+                BudgetName = budget.Name,
+                Type = "Warning",
+                Message = $"Budget is {spentPercentage:F1}% utilized - approaching limit",
+                CreatedAt = DateTime.Now.AddMinutes(-Random.Shared.Next(10, 60))
+            });
+        }
+    }
+
+    private void GenerateMockAlerts()
+    {
+        activeNotifications = new List<BudgetNotification>
+        {
+            new BudgetNotification
+            {
+                Id = Guid.NewGuid(),
+                BudgetId = Guid.NewGuid(),
+                BudgetName = "Holiday Savings",
+                Type = "Critical",
+                Message = "Budget exceeded by $200.00 - immediate attention required",
+                CreatedAt = DateTime.Now.AddMinutes(-5)
+            },
+            new BudgetNotification
+            {
+                Id = Guid.NewGuid(),
+                BudgetId = Guid.NewGuid(),
+                BudgetName = "Weekly Groceries",
+                Type = "Warning",
+                Message = "Budget is 95.0% utilized - approaching limit",
+                CreatedAt = DateTime.Now.AddMinutes(-15)
+            }
+        };
+        hasActiveAlerts = true;
+    }
+
+    private void DismissAlert(Guid notificationId)
+    {
+        activeNotifications.RemoveAll(n => n.Id == notificationId);
+        hasActiveAlerts = activeNotifications.Any();
+        StateHasChanged();
+    }
+
+    private void DismissAllAlerts()
+    {
+        activeNotifications.Clear();
+        hasActiveAlerts = false;
+        StateHasChanged();
+    }
+
+    private string GetNotificationClass(string type)
+    {
+        return type switch
+        {
+            "Critical" => "bg-red-50 border-red-200 text-red-800",
+            "Warning" => "bg-yellow-50 border-yellow-200 text-yellow-800",
+            _ => "bg-blue-50 border-blue-200 text-blue-800"
+        };
+    }
+
+    // DTOs
+    public class BudgetDto
+    {
+        public Guid Id { get; set; }
+        public string Name { get; set; } = "";
+        public DateTime PeriodStart { get; set; } = DateTime.Now;
+        public DateTime PeriodEnd { get; set; } = DateTime.Now.AddMonths(1);
+        public decimal Amount { get; set; }
+        public decimal SpentAmount { get; set; }
+        public decimal PlannedIncomeAmount { get; set; }
+        public decimal ActualIncomeAmount { get; set; }
+        public string Status { get; set; } = "OnTrack";
+    }
+
+    public class BudgetNotification
+    {
+        public Guid Id { get; set; }
+        public Guid BudgetId { get; set; }
+        public string BudgetName { get; set; } = "";
+        public string Type { get; set; } = "";
+        public string Message { get; set; } = "";
+        public DateTime CreatedAt { get; set; }
+    }
+
+    public class BudgetAlertDto
+    {
+        public string Type { get; set; } = "";
+        public string Message { get; set; } = "";
+        public DateTime CreatedAt { get; set; }
+    }
+}

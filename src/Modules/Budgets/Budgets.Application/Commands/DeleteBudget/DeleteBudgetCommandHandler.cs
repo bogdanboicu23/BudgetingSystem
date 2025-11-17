@@ -1,5 +1,5 @@
 using MediatR;
-using Budgets.Application.Commands.CreateBudget;
+using Budgets.Domain.Repositories;
 
 namespace Budgets.Application.Commands.DeleteBudget;
 
@@ -14,15 +14,14 @@ public class DeleteBudgetCommandHandler : IRequestHandler<DeleteBudgetCommand, U
 
     public async Task<Unit> Handle(DeleteBudgetCommand request, CancellationToken cancellationToken)
     {
-        var budget = await _budgetRepository.GetByIdAsync(request.Id);
+        var budgetExists = await _budgetRepository.ExistsAsync(request.Id, cancellationToken);
 
-        if (budget == null)
+        if (!budgetExists)
         {
             throw new ArgumentException($"Budget with ID {request.Id} not found");
         }
 
-        await _budgetRepository.DeleteAsync(budget);
-        await _budgetRepository.SaveChangesAsync();
+        await _budgetRepository.DeleteAsync(request.Id, cancellationToken);
 
         return Unit.Value;
     }

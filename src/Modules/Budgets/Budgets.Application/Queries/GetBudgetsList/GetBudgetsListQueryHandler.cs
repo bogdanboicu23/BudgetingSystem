@@ -1,6 +1,6 @@
 using MediatR;
 using Budgets.Domain.Entities;
-using Budgets.Application.Commands.CreateBudget;
+using Budgets.Domain.Repositories;
 
 namespace Budgets.Application.Queries.GetBudgetsList;
 
@@ -15,6 +15,7 @@ public class GetBudgetsListQueryHandler : IRequestHandler<GetBudgetsListQuery, I
 
     public async Task<IList<Budget>> Handle(GetBudgetsListQuery request, CancellationToken cancellationToken)
     {
-        return await _budgetRepository.GetAllAsync();
+        var budgets = await _budgetRepository.GetAllAsync(cancellationToken);
+        return budgets.ToList();
     }
 }

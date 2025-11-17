@@ -1,0 +1,583 @@
+@page "/transactions"
+@rendermode InteractiveServer
+@using System.Net.Http.Json
+@inject HttpClient Http
+
+<PageTitle>Transaction Management</PageTitle>
+
+<div class="space-y-6">
+    <div class="flex justify-between items-center">
+        <h1 class="text-3xl font-bold text-gray-900">Transaction Management</h1>
+        <div class="flex space-x-3">
+            <button @onclick="LoadBankTransactions" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                </svg>
+                Sync Bank Data
+            </button>
+            <button @onclick="CategorizeTransactions" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+                </svg>
+                Auto-Categorize (Chain of Responsibility)
+            </button>
+            <button @onclick="ProcessAllTransactions" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                </svg>
+                Process Pipeline
+            </button>
+        </div>
+    </div>
+
+    <!-- Filter and Search -->
+    <div class="bg-white rounded-xl shadow-soft border border-gray-100 p-6">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Search</label>
+                <input @bind="searchTerm" @oninput="FilterTransactions" type="text"
+                       class="input-field" placeholder="Search transactions..." />
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                <select @bind="filterCategory" @bind:after="FilterTransactions" class="select-field">
+                    <option value="">All Categories</option>
+                    <option value="Food">Food</option>
+                    <option value="Transportation">Transportation</option>
+                    <option value="Shopping">Shopping</option>
+                    <option value="Entertainment">Entertainment</option>
+                    <option value="Bills">Bills</option>
+                    <option value="Income">Income</option>
+                    <option value="Uncategorized">Uncategorized</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                <select @bind="filterStatus" @bind:after="FilterTransactions" class="select-field">
+                    <option value="">All Status</option>
+                    <option value="linked">Linked to Budget</option>
+                    <option value="unlinked">Not Linked</option>
+                    <option value="categorized">Auto-Categorized</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Date Range</label>
+                <select @bind="filterDateRange" @bind:after="FilterTransactions" class="select-field">
+                    <option value="30">Last 30 days</option>
+                    <option value="7">Last 7 days</option>
+                    <option value="90">Last 90 days</option>
+                    <option value="all">All time</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- Transactions Table -->
+    <div class="bg-white rounded-xl shadow-soft border border-gray-100">
+        <div class="p-6 border-b border-gray-100">
+            <div class="flex justify-between items-center">
+                <h2 class="text-lg font-semibold text-gray-900">Bank Transactions</h2>
+                <span class="text-sm text-gray-500">@filteredTransactions.Count transactions</span>
+            </div>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead class="bg-gray-50 border-b">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Budget Link</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200">
+                    @foreach (var transaction in filteredTransactions.Take(20))
+                    {
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                @transaction.Date.ToString("MMM dd, yyyy")
+                            </td>
+                            <td class="px-6 py-4">
+                                <div>
+                                    <div class="text-sm font-medium text-gray-900">@transaction.Description</div>
+                                    <div class="text-sm text-gray-500">@transaction.MerchantName</div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="text-sm font-medium @(transaction.Amount >= 0 ? "text-green-600" : "text-red-600")">
+                                    @(transaction.Amount >= 0 ? "+" : "")$@Math.Abs(transaction.Amount).ToString("N2")
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                @if (!string.IsNullOrEmpty(transaction.PredictedCategory))
+                                {
+                                    <div class="flex items-center">
+                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                            @transaction.PredictedCategory
+                                        </span>
+                                        <span class="ml-2 text-xs text-gray-500">@((transaction.Confidence * 100).ToString("F0"))%</span>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <button @onclick="() => CategorizeTransaction(transaction)"
+                                            class="text-blue-600 hover:text-blue-700 text-sm">
+                                        Categorize
+                                    </button>
+                                }
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                @if (transaction.LinkedPlannedItemId.HasValue)
+                                {
+                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                        Linked
+                                    </span>
+                                }
+                                else
+                                {
+                                    <button @onclick="() => ShowLinkModal(transaction)"
+                                            class="text-blue-600 hover:text-blue-700 text-sm">
+                                        Link to Budget
+                                    </button>
+                                }
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                <div class="flex space-x-2">
+                                    @if (transaction.LinkedPlannedItemId.HasValue)
+                                    {
+                                        <button @onclick="() => UnlinkTransaction(transaction)" class="text-red-600 hover:text-red-700">
+                                            Unlink
+                                        </button>
+                                    }
+                                    <button @onclick="() => EditTransaction(transaction)" class="text-blue-600 hover:text-blue-700">
+                                        Edit
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Link Transaction Modal -->
+@if (showLinkModal && selectedTransaction != null)
+{
+    <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-xl shadow-xl p-6 w-full max-w-lg">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-semibold text-gray-900">Link Transaction to Budget Item</h2>
+                <button @onclick="() => showLinkModal = false" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+
+            <div class="mb-4 p-3 bg-gray-50 rounded-lg">
+                <p class="text-sm font-medium">@selectedTransaction.Description</p>
+                <p class="text-sm text-gray-500">@selectedTransaction.MerchantName • $@Math.Abs(selectedTransaction.Amount).ToString("N2")</p>
+            </div>
+
+            <form @onsubmit="LinkTransaction" @onsubmit:preventDefault="true">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Link to Planned Item</label>
+                        <select @bind="selectedPlannedItemId" class="select-field" required>
+                            <option value="">Select a planned item...</option>
+                            @foreach (var item in GetLinkableItems(selectedTransaction))
+                            {
+                                <option value="@item.Id">
+                                    @item.Name - $@item.PlannedAmount.ToString("N2") (@item.Category)
+                                </option>
+                            }
+                        </select>
+                    </div>
+                </div>
+
+                <div class="flex justify-end space-x-3 mt-6 pt-4 border-t">
+                    <button type="button" @onclick="() => showLinkModal = false" class="btn-secondary">Cancel</button>
+                    <button type="submit" class="btn-primary">Link Transaction</button>
+                </div>
+            </form>
+        </div>
+    </div>
+}
+
+@code {
+    private List<TransactionDto> transactions = new();
+    private List<TransactionDto> filteredTransactions = new();
+    private List<PlannedItemDto> availablePlannedItems = new();
+
+    private string searchTerm = "";
+    private string filterCategory = "";
+    private string filterStatus = "";
+    private string filterDateRange = "30";
+
+    private bool showLinkModal = false;
+    private TransactionDto? selectedTransaction;
+    private Guid selectedPlannedItemId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadTransactions();
+        await LoadAvailablePlannedItems();
+        FilterTransactions();
+    }
+
+    private async Task LoadBankTransactions()
+    {
+        try
+        {
+            // Simulate calling the bank API through our backend
+            var response = await Http.GetFromJsonAsync<List<TransactionDto>>("/api/transactions/mock-data/account123");
+            if (response != null)
+            {
+                transactions = response;
+                await CategorizeTransactions();
+                FilterTransactions();
+                StateHasChanged();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading bank transactions: {ex.Message}");
+        }
+    }
+
+    private async Task LoadTransactions()
+    {
+        // Mock transaction data for demo
+        transactions = new List<TransactionDto>
+        {
+            new TransactionDto
+            {
+                Id = Guid.NewGuid(),
+                Description = "SALARY DEPOSIT",
+                MerchantName = "ABC COMPANY INC",
+                Amount = 3000,
+                Date = DateTime.Now.AddDays(-1),
+                PredictedCategory = "Income",
+                PredictedSubcategory = "Salary",
+                Confidence = 0.95,
+                LinkedPlannedItemId = null
+            },
+            new TransactionDto
+            {
+                Id = Guid.NewGuid(),
+                Description = "WALMART SUPERCENTER",
+                MerchantName = "WALMART #1234",
+                Amount = -85.50m,
+                Date = DateTime.Now.AddDays(-2),
+                PredictedCategory = "Food",
+                PredictedSubcategory = "Groceries",
+                Confidence = 0.88,
+                LinkedPlannedItemId = null
+            },
+            new TransactionDto
+            {
+                Id = Guid.NewGuid(),
+                Description = "SHELL GAS STATION",
+                MerchantName = "SHELL #5678",
+                Amount = -45.00m,
+                Date = DateTime.Now.AddDays(-3),
+                PredictedCategory = "Transportation",
+                PredictedSubcategory = "Gas",
+                Confidence = 0.92,
+                LinkedPlannedItemId = null
+            },
+            new TransactionDto
+            {
+                Id = Guid.NewGuid(),
+                Description = "NETFLIX SUBSCRIPTION",
+                MerchantName = "NETFLIX.COM",
+                Amount = -15.99m,
+                Date = DateTime.Now.AddDays(-5),
+                PredictedCategory = "Entertainment",
+                PredictedSubcategory = "Subscriptions",
+                Confidence = 0.98,
+                LinkedPlannedItemId = null
+            },
+            new TransactionDto
+            {
+                Id = Guid.NewGuid(),
+                Description = "APARTMENT RENT",
+                MerchantName = "PROPERTY MGMT CO",
+                Amount = -1200.00m,
+                Date = DateTime.Now.AddDays(-28),
+                PredictedCategory = "Bills",
+                PredictedSubcategory = "Rent/Mortgage",
+                Confidence = 0.96,
+                LinkedPlannedItemId = null
+            }
+        };
+
+        filteredTransactions = transactions;
+    }
+
+    private async Task LoadAvailablePlannedItems()
+    {
+        // Mock planned items that can be linked to
+        availablePlannedItems = new List<PlannedItemDto>
+        {
+            new PlannedItemDto { Id = Guid.NewGuid(), Name = "Monthly Salary", Category = "Salary", PlannedAmount = 3000, Type = "Income" },
+            new PlannedItemDto { Id = Guid.NewGuid(), Name = "Freelance Work", Category = "Freelance", PlannedAmount = 500, Type = "Income" },
+            new PlannedItemDto { Id = Guid.NewGuid(), Name = "Groceries", Category = "Food", PlannedAmount = 400, Type = "Expense" },
+            new PlannedItemDto { Id = Guid.NewGuid(), Name = "Gas & Transportation", Category = "Transportation", PlannedAmount = 300, Type = "Expense" },
+            new PlannedItemDto { Id = Guid.NewGuid(), Name = "Entertainment", Category = "Entertainment", PlannedAmount = 200, Type = "Expense" },
+            new PlannedItemDto { Id = Guid.NewGuid(), Name = "Housing", Category = "Bills", PlannedAmount = 1200, Type = "Expense" }
+        };
+    }
+
+    private void FilterTransactions()
+    {
+        filteredTransactions = transactions.Where(t =>
+        {
+            bool matchesSearch = string.IsNullOrEmpty(searchTerm) ||
+                                t.Description.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+                                t.MerchantName.Contains(searchTerm, StringComparison.OrdinalIgnoreCase);
+
+            bool matchesCategory = string.IsNullOrEmpty(filterCategory) ||
+                                  t.PredictedCategory == filterCategory;
+
+            bool matchesStatus = string.IsNullOrEmpty(filterStatus) ||
+                                (filterStatus == "linked" && t.LinkedPlannedItemId.HasValue) ||
+                                (filterStatus == "unlinked" && !t.LinkedPlannedItemId.HasValue) ||
+                                (filterStatus == "categorized" && !string.IsNullOrEmpty(t.PredictedCategory));
+
+            bool matchesDate = filterDateRange == "all" ||
+                              (int.TryParse(filterDateRange, out int days) &&
+                               t.Date >= DateTime.Now.AddDays(-days));
+
+            return matchesSearch && matchesCategory && matchesStatus && matchesDate;
+        }).ToList();
+
+        StateHasChanged();
+    }
+
+    private async Task CategorizeTransactions()
+    {
+        try
+        {
+            foreach (var transaction in transactions.Where(t => string.IsNullOrEmpty(t.PredictedCategory)))
+            {
+                await CategorizeTransaction(transaction);
+            }
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error categorizing transactions: {ex.Message}");
+        }
+    }
+
+    private async Task CategorizeTransaction(TransactionDto transaction)
+    {
+        try
+        {
+            // Try to use the real Chain of Responsibility API
+            var request = new
+            {
+                Description = transaction.Description,
+                Amount = transaction.Amount,
+                Date = transaction.Date,
+                MerchantName = transaction.MerchantName,
+                TransactionType = transaction.Amount >= 0 ? "deposit" : "withdrawal"
+            };
+
+            var response = await Http.PostAsJsonAsync("/api/transactions/process-single", request);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var result = await response.Content.ReadFromJsonAsync<TransactionProcessingResult>();
+                if (result?.Result != null)
+                {
+                    transaction.PredictedCategory = result.Result.CategoryName;
+                    transaction.PredictedSubcategory = result.Result.Classification;
+                    transaction.Confidence = result.Result.IsProcessed ? 0.9 : 0.5;
+                    transaction.ProcessedBy = result.Result.ProcessedBy;
+                }
+            }
+            else
+            {
+                // Fallback to local prediction
+                var (category, subcategory, confidence) = PredictCategory(transaction);
+                transaction.PredictedCategory = category;
+                transaction.PredictedSubcategory = subcategory;
+                transaction.Confidence = confidence;
+                transaction.ProcessedBy = "Local Classification";
+            }
+
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error categorizing transaction: {ex.Message}");
+            // Fallback to local prediction
+            var (category, subcategory, confidence) = PredictCategory(transaction);
+            transaction.PredictedCategory = category;
+            transaction.PredictedSubcategory = subcategory;
+            transaction.Confidence = confidence;
+            transaction.ProcessedBy = "Local Classification (Error Fallback)";
+        }
+    }
+
+    private async Task ProcessAllTransactions()
+    {
+        try
+        {
+            var uncategorizedTransactions = transactions.Where(t => string.IsNullOrEmpty(t.PredictedCategory)).ToList();
+
+            foreach (var transaction in uncategorizedTransactions)
+            {
+                await CategorizeTransaction(transaction);
+                // Small delay to show the processing effect
+                await Task.Delay(100);
+            }
+
+            // Show processing summary
+            var processedCount = uncategorizedTransactions.Count;
+            Console.WriteLine($"Processed {processedCount} transactions through Chain of Responsibility pattern");
+
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error processing transactions: {ex.Message}");
+        }
+    }
+
+    private (string category, string subcategory, double confidence) PredictCategory(TransactionDto transaction)
+    {
+        var description = transaction.Description.ToLower();
+        var merchant = transaction.MerchantName.ToLower();
+
+        // Simple rule-based prediction for demo
+        if (transaction.Amount > 0)
+        {
+            if (description.Contains("salary") || merchant.Contains("company"))
+                return ("Income", "Salary", 0.95);
+            return ("Income", "Other", 0.70);
+        }
+
+        // Expense categorization
+        if (merchant.Contains("walmart") || merchant.Contains("grocery") || merchant.Contains("market"))
+            return ("Food", "Groceries", 0.90);
+        if (merchant.Contains("shell") || merchant.Contains("gas") || merchant.Contains("exxon"))
+            return ("Transportation", "Gas", 0.92);
+        if (merchant.Contains("netflix") || merchant.Contains("spotify") || description.Contains("subscription"))
+            return ("Entertainment", "Subscriptions", 0.95);
+        if (description.Contains("rent") || merchant.Contains("property"))
+            return ("Bills", "Rent/Mortgage", 0.96);
+
+        return ("Other", "Miscellaneous", 0.60);
+    }
+
+    private void ShowLinkModal(TransactionDto transaction)
+    {
+        selectedTransaction = transaction;
+        showLinkModal = true;
+    }
+
+    private async Task LinkTransaction()
+    {
+        if (selectedTransaction != null && selectedPlannedItemId != Guid.Empty)
+        {
+            selectedTransaction.LinkedPlannedItemId = selectedPlannedItemId;
+
+            // Update the planned item's linked amount
+            var plannedItem = availablePlannedItems.FirstOrDefault(p => p.Id == selectedPlannedItemId);
+            if (plannedItem != null)
+            {
+                plannedItem.LinkedAmount += Math.Abs(selectedTransaction.Amount);
+            }
+
+            showLinkModal = false;
+            selectedTransaction = null;
+            selectedPlannedItemId = Guid.Empty;
+            FilterTransactions();
+            StateHasChanged();
+        }
+    }
+
+    private async Task UnlinkTransaction(TransactionDto transaction)
+    {
+        if (transaction.LinkedPlannedItemId.HasValue)
+        {
+            // Update the planned item's linked amount
+            var plannedItem = availablePlannedItems.FirstOrDefault(p => p.Id == transaction.LinkedPlannedItemId.Value);
+            if (plannedItem != null)
+            {
+                plannedItem.LinkedAmount -= Math.Abs(transaction.Amount);
+            }
+
+            transaction.LinkedPlannedItemId = null;
+            FilterTransactions();
+            StateHasChanged();
+        }
+    }
+
+    private void EditTransaction(TransactionDto transaction)
+    {
+        // TODO: Implement transaction editing
+    }
+
+    private List<PlannedItemDto> GetLinkableItems(TransactionDto transaction)
+    {
+        // Return items that match the transaction type (income/expense)
+        var transactionType = transaction.Amount >= 0 ? "Income" : "Expense";
+        return availablePlannedItems.Where(item => item.Type == transactionType).ToList();
+    }
+
+    public class TransactionDto
+    {
+        public Guid Id { get; set; }
+        public string Description { get; set; } = "";
+        public string MerchantName { get; set; } = "";
+        public decimal Amount { get; set; }
+        public DateTime Date { get; set; }
+        public string PredictedCategory { get; set; } = "";
+        public string PredictedSubcategory { get; set; } = "";
+        public double Confidence { get; set; }
+        public Guid? LinkedPlannedItemId { get; set; }
+        public string ProcessedBy { get; set; } = "";
+    }
+
+    public class TransactionProcessingResult
+    {
+        public TransactionData? Transaction { get; set; }
+        public ProcessingResultData? Result { get; set; }
+    }
+
+    public class TransactionData
+    {
+        public string Description { get; set; } = "";
+        public decimal Amount { get; set; }
+        public DateTime Date { get; set; }
+        public string MerchantName { get; set; } = "";
+        public string TransactionType { get; set; } = "";
+    }
+
+    public class ProcessingResultData
+    {
+        public string CategoryName { get; set; } = "";
+        public string Classification { get; set; } = "";
+        public bool IsProcessed { get; set; }
+        public string ProcessedBy { get; set; } = "";
+    }
+
+    public class PlannedItemDto
+    {
+        public Guid Id { get; set; }
+        public string Name { get; set; } = "";
+        public string Category { get; set; } = "";
+        public decimal PlannedAmount { get; set; }
+        public decimal LinkedAmount { get; set; }
+        public string Type { get; set; } = ""; // "Income" or "Expense"
+    }
+}

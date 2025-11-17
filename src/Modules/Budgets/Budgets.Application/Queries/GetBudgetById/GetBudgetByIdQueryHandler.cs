@@ -1,6 +1,6 @@
 using MediatR;
 using Budgets.Domain.Entities;
-using Budgets.Application.Commands.CreateBudget;
+using Budgets.Domain.Repositories;
 
 namespace Budgets.Application.Queries.GetBudgetById;
 
@@ -15,6 +15,6 @@ public class GetBudgetByIdQueryHandler : IRequestHandler<GetBudgetByIdQuery, Bud
 
     public async Task<Budget?> Handle(GetBudgetByIdQuery request, CancellationToken cancellationToken)
     {
-        return await _budgetRepository.GetByIdAsync(request.Id);
+        return await _budgetRepository.GetByIdAsync(request.Id, cancellationToken);
     }
 }
