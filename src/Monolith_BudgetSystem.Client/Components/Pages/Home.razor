@@ -1,0 +1,282 @@
+﻿@page "/"
+@rendermode InteractiveServer
+@using System.Net.Http.Json
+@inject HttpClient Http
+@inject NavigationManager Navigation
+
+<PageTitle>Budget Dashboard</PageTitle>
+
+<div class="space-y-6">
+    <div class="flex justify-between items-center">
+        <h1 class="text-3xl font-bold text-gray-900">Dashboard</h1>
+        <div class="flex space-x-3">
+            <button @onclick="RefreshAnalytics" class="btn-secondary">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                </svg>
+                Refresh
+            </button>
+            <button @onclick="NavigateToNewBudget" class="btn-primary">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                </svg>
+                New Budget
+            </button>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div class="bg-white rounded-xl shadow-soft border border-gray-100 p-6">
+            <div class="flex items-center">
+                <div class="flex-1">
+                    <p class="text-sm font-medium text-gray-600">Total Budget</p>
+                    <p class="text-2xl font-bold text-gray-900">$5,000</p>
+                </div>
+                <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                    <svg class="w-6 h-6 text-blue-600" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/>
+                    </svg>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-soft border border-gray-100 p-6">
+            <div class="flex items-center">
+                <div class="flex-1">
+                    <p class="text-sm font-medium text-gray-600">Remaining</p>
+                    <p class="text-2xl font-bold text-green-600">$2,350</p>
+                </div>
+                <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                    <svg class="w-6 h-6 text-green-600" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M7 14c-1.66 0-3 1.34-3 3 0 1.31-.84 2.42-2 2.83V20h2c2.21 0 4-1.79 4-4 0-1.66 1.34-3 3-3s3 1.34 3 3c0 2.21 1.79 4 4 4h2v-.17c-1.16-.41-2-1.52-2-2.83 0-1.66-1.34-3-3-3H7z"/>
+                    </svg>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-soft border border-gray-100 p-6">
+            <div class="flex items-center">
+                <div class="flex-1">
+                    <p class="text-sm font-medium text-gray-600">Spent</p>
+                    <p class="text-2xl font-bold text-red-600">$2,650</p>
+                </div>
+                <div class="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
+                    <svg class="w-6 h-6 text-red-600" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M20 4H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"/>
+                    </svg>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-soft border border-gray-100 p-6">
+            <div class="flex items-center">
+                <div class="flex-1">
+                    <p class="text-sm font-medium text-gray-600">Categories</p>
+                    <p class="text-2xl font-bold text-purple-600">8</p>
+                </div>
+                <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                    <svg class="w-6 h-6 text-purple-600" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-1 9H9V9h10v2zm-4 4H9v-2h6v2zm4-8H9V5h10v2z"/>
+                    </svg>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Content Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Recent Transactions -->
+        <div class="lg:col-span-2 bg-white rounded-xl shadow-soft border border-gray-100">
+            <div class="p-6 border-b border-gray-100">
+                <h2 class="text-lg font-semibold text-gray-900">Recent Transactions</h2>
+            </div>
+            <div class="p-6">
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                        <div class="flex items-center space-x-4">
+                            <div class="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
+                                <svg class="w-5 h-5 text-red-600" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M7 18c0 1.1.9 2 2 2s2-.9 2-2-.9-2-2-2-2 .9-2 2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12L8.1 13h7.45c.75 0 1.41-.41 1.75-1.03L21.7 4H5.21l-.94-2H1zm16 16c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <p class="font-medium text-gray-900">Grocery Store</p>
+                                <p class="text-sm text-gray-500">Nov 13, 2024 • Food</p>
+                            </div>
+                        </div>
+                        <span class="text-lg font-semibold text-red-600">-$85.50</span>
+                    </div>
+
+                    <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                        <div class="flex items-center space-x-4">
+                            <div class="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center">
+                                <svg class="w-5 h-5 text-yellow-600" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5H15V3c0-.83-.67-1.5-1.5-1.5S12 2.17 12 3v2H9.5C8.84 5 8.28 5.42 8.08 6.01L6.76 10.8c-.09.34.13.7.5.7h1.28l.59 2.95c.12.64.69 1.05 1.32 1.05h4.09c.63 0 1.2-.41 1.32-1.05l.59-2.95h1.28c.37 0 .59-.36.5-.7l-1.31-4.79z"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <p class="font-medium text-gray-900">Gas Station</p>
+                                <p class="text-sm text-gray-500">Nov 12, 2024 • Transportation</p>
+                            </div>
+                        </div>
+                        <span class="text-lg font-semibold text-red-600">-$45.00</span>
+                    </div>
+
+                    <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                        <div class="flex items-center space-x-4">
+                            <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                                <svg class="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M11 8c0-2.21-1.79-4-4-4S3 5.79 3 8s1.79 4 4 4 4-1.79 4-4zm8 6c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm-8 0c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4zm8 0c-.29 0-.62.02-.97.05C18.9 14.54 19.76 15.35 20 16.4V18h4v-2c0-2.66-3.33-4-5-4z"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <p class="font-medium text-gray-900">Salary Deposit</p>
+                                <p class="text-sm text-gray-500">Nov 10, 2024 • Income</p>
+                            </div>
+                        </div>
+                        <span class="text-lg font-semibold text-green-600">+$2,500.00</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Budget Categories -->
+        <div class="bg-white rounded-xl shadow-soft border border-gray-100">
+            <div class="p-6 border-b border-gray-100">
+                <h2 class="text-lg font-semibold text-gray-900">Budget Categories</h2>
+            </div>
+            <div class="p-6 space-y-6">
+                <div>
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-sm font-medium text-gray-700">Food</span>
+                        <span class="text-sm text-gray-500">$450 / $600</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2">
+                        <div class="bg-green-500 h-2 rounded-full" style="width: 75%"></div>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-sm font-medium text-gray-700">Transportation</span>
+                        <span class="text-sm text-gray-500">$280 / $300</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2">
+                        <div class="bg-yellow-500 h-2 rounded-full" style="width: 93%"></div>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-sm font-medium text-gray-700">Entertainment</span>
+                        <span class="text-sm text-gray-500">$120 / $200</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2">
+                        <div class="bg-blue-500 h-2 rounded-full" style="width: 60%"></div>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-sm font-medium text-gray-700">Housing</span>
+                        <span class="text-sm text-gray-500">$1,200 / $1,200</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2">
+                        <div class="bg-red-500 h-2 rounded-full" style="width: 100%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    // Facade Pattern integration for dashboard analytics
+    private DashboardAnalytics? dashboardData;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDashboardAnalytics();
+    }
+
+    private async Task LoadDashboardAnalytics()
+    {
+        try
+        {
+            // This would use the Facade pattern to get comprehensive dashboard data
+            // For now, load mock data
+            dashboardData = new DashboardAnalytics
+            {
+                TotalBudget = 5000m,
+                TotalSpent = 2650m,
+                TotalRemaining = 2350m,
+                CategoryCount = 8,
+                RecentTransactions = GetMockRecentTransactions(),
+                CategoryBreakdown = GetMockCategoryBreakdown()
+            };
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading dashboard analytics: {ex.Message}");
+        }
+    }
+
+    private async Task RefreshAnalytics()
+    {
+        await LoadDashboardAnalytics();
+    }
+
+    private void NavigateToNewBudget()
+    {
+        Navigation.NavigateTo("/budgets");
+    }
+
+    private List<RecentTransaction> GetMockRecentTransactions()
+    {
+        return new List<RecentTransaction>
+        {
+            new RecentTransaction { Description = "Grocery Store", Category = "Food", Amount = -85.50m, Date = DateTime.Now.AddDays(-1) },
+            new RecentTransaction { Description = "Gas Station", Category = "Transportation", Amount = -45.00m, Date = DateTime.Now.AddDays(-2) },
+            new RecentTransaction { Description = "Salary Deposit", Category = "Income", Amount = 2500.00m, Date = DateTime.Now.AddDays(-3) }
+        };
+    }
+
+    private List<CategoryData> GetMockCategoryBreakdown()
+    {
+        return new List<CategoryData>
+        {
+            new CategoryData { Name = "Food", Spent = 450m, Budget = 600m },
+            new CategoryData { Name = "Transportation", Spent = 280m, Budget = 300m },
+            new CategoryData { Name = "Entertainment", Spent = 120m, Budget = 200m },
+            new CategoryData { Name = "Housing", Spent = 1200m, Budget = 1200m }
+        };
+    }
+
+    // DTOs for Facade Pattern
+    public class DashboardAnalytics
+    {
+        public decimal TotalBudget { get; set; }
+        public decimal TotalSpent { get; set; }
+        public decimal TotalRemaining { get; set; }
+        public int CategoryCount { get; set; }
+        public List<RecentTransaction> RecentTransactions { get; set; } = new();
+        public List<CategoryData> CategoryBreakdown { get; set; } = new();
+    }
+
+    public class RecentTransaction
+    {
+        public string Description { get; set; } = "";
+        public string Category { get; set; } = "";
+        public decimal Amount { get; set; }
+        public DateTime Date { get; set; }
+    }
+
+    public class CategoryData
+    {
+        public string Name { get; set; } = "";
+        public decimal Spent { get; set; }
+        public decimal Budget { get; set; }
+        public double Percentage => Budget > 0 ? (double)(Spent / Budget) * 100 : 0;
+    }
+}

@@ -1,0 +1,707 @@
+@page "/reports"
+@rendermode InteractiveServer
+@using System.Net.Http.Json
+@inject HttpClient Http
+@inject NavigationManager Navigation
+
+<PageTitle>Budget Reports</PageTitle>
+
+<div class="space-y-6">
+    <div class="flex justify-between items-center">
+        <h1 class="text-3xl font-bold text-gray-900">Budget Reports</h1>
+        <span class="text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded">Template Method Pattern</span>
+    </div>
+
+    <!-- Report Configuration -->
+    <div class="bg-white rounded-xl shadow-soft border border-gray-100 p-6">
+        <h2 class="text-xl font-semibold text-gray-900 mb-4">Generate Report</h2>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Report Type</label>
+                <select @bind="selectedReportType" class="input-field">
+                    <option value="budget-summary">Budget Summary Report</option>
+                    <option value="spending-analysis">Spending Analysis Report</option>
+                    <option value="variance-report">Budget vs Actual Variance Report</option>
+                    <option value="category-breakdown">Category Breakdown Report</option>
+                    <option value="performance-report">Performance Metrics Report</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Date Range</label>
+                <select @bind="selectedDateRange" class="input-field">
+                    <option value="current-month">Current Month</option>
+                    <option value="last-30-days">Last 30 Days</option>
+                    <option value="last-90-days">Last 90 Days</option>
+                    <option value="current-quarter">Current Quarter</option>
+                    <option value="custom">Custom Range</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Format</label>
+                <select @bind="selectedFormat" class="input-field">
+                    <option value="web">Web View</option>
+                    <option value="pdf">PDF Download</option>
+                    <option value="excel">Excel Export</option>
+                    <option value="json">JSON Data</option>
+                </select>
+            </div>
+        </div>
+
+        @if (selectedDateRange == "custom")
+        {
+            <div class="grid grid-cols-2 gap-4 mt-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
+                    <input @bind="customStartDate" type="date" class="input-field" />
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">End Date</label>
+                    <input @bind="customEndDate" type="date" class="input-field" />
+                </div>
+            </div>
+        }
+
+        <div class="flex justify-between items-center mt-6 pt-4 border-t">
+            <div class="text-sm text-gray-600">
+                Template Method will execute: Data Collection → Validation → Processing → Formatting
+            </div>
+            <button @onclick="GenerateReport" class="btn-primary">
+                Generate Report
+            </button>
+        </div>
+    </div>
+
+    <!-- Report Generation Progress -->
+    @if (isGenerating)
+    {
+        <div class="bg-white rounded-xl shadow-soft border border-gray-100 p-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">Generating Report...</h3>
+            <div class="space-y-3">
+                @foreach (var step in processingSteps)
+                {
+                    <div class="flex items-center">
+                        @if (step.IsCompleted)
+                        {
+                            <svg class="w-5 h-5 text-green-600 mr-3" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                            </svg>
+                        }
+                        else if (step.IsActive)
+                        {
+                            <div class="w-5 h-5 mr-3">
+                                <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="w-5 h-5 bg-gray-300 rounded-full mr-3"></div>
+                        }
+                        <span class="@(step.IsActive ? "font-medium text-blue-900" : step.IsCompleted ? "text-green-800" : "text-gray-500")">
+                            @step.Name
+                        </span>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+
+    <!-- Generated Report Display -->
+    @if (generatedReport != null && !isGenerating)
+    {
+        <div class="bg-white rounded-xl shadow-soft border border-gray-100 p-6">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-semibold text-gray-900">@generatedReport.Title</h2>
+                <div class="flex space-x-2">
+                    <button @onclick="ExportReport" class="btn-secondary">
+                        Export Report
+                    </button>
+                    <button @onclick="ShareReport" class="btn-secondary">
+                        Share Report
+                    </button>
+                </div>
+            </div>
+
+            <!-- Report Metadata -->
+            <div class="bg-gray-50 rounded-lg p-4 mb-6">
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                    <div>
+                        <span class="text-gray-600">Generated:</span>
+                        <span class="font-medium ml-1">@generatedReport.GeneratedAt.ToString("MMM dd, yyyy HH:mm")</span>
+                    </div>
+                    <div>
+                        <span class="text-gray-600">Period:</span>
+                        <span class="font-medium ml-1">@generatedReport.PeriodDescription</span>
+                    </div>
+                    <div>
+                        <span class="text-gray-600">Type:</span>
+                        <span class="font-medium ml-1">@generatedReport.ReportType</span>
+                    </div>
+                    <div>
+                        <span class="text-gray-600">Records:</span>
+                        <span class="font-medium ml-1">@generatedReport.RecordCount</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Report Content -->
+            <div class="space-y-6">
+                <!-- Summary Section -->
+                @if (generatedReport.Summary.Any())
+                {
+                    <div>
+                        <h3 class="text-lg font-medium text-gray-900 mb-3">Summary</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            @foreach (var summary in generatedReport.Summary)
+                            {
+                                <div class="bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg p-4">
+                                    <div class="text-sm font-medium text-blue-800">@summary.Label</div>
+                                    <div class="text-2xl font-bold text-blue-900">@summary.Value</div>
+                                    @if (!string.IsNullOrEmpty(summary.Trend))
+                                    {
+                                        <div class="text-xs text-blue-600">@summary.Trend</div>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+
+                <!-- Data Table -->
+                @if (generatedReport.DataRows.Any())
+                {
+                    <div>
+                        <h3 class="text-lg font-medium text-gray-900 mb-3">Detailed Data</h3>
+                        <div class="overflow-x-auto">
+                            <table class="w-full border border-gray-200 rounded-lg">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        @foreach (var header in generatedReport.Headers)
+                                        {
+                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">@header</th>
+                                        }
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-200">
+                                    @foreach (var row in generatedReport.DataRows.Take(10))
+                                    {
+                                        <tr class="hover:bg-gray-50">
+                                            @foreach (var cell in row)
+                                            {
+                                                <td class="px-4 py-3 text-sm text-gray-900">@cell</td>
+                                            }
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                        @if (generatedReport.DataRows.Count > 10)
+                        {
+                            <div class="text-center mt-4">
+                                <span class="text-sm text-gray-500">Showing 10 of @generatedReport.DataRows.Count rows</span>
+                            </div>
+                        }
+                    </div>
+                }
+
+                <!-- Charts Section -->
+                @if (generatedReport.ChartData.Any())
+                {
+                    <div>
+                        <h3 class="text-lg font-medium text-gray-900 mb-3">Visualizations</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            @foreach (var chart in generatedReport.ChartData)
+                            {
+                                <div class="bg-white border border-gray-200 rounded-lg p-6">
+                                    <h4 class="font-medium text-gray-900 mb-4">@chart.Title</h4>
+
+                                    @if (chart.Type == "Pie Chart")
+                                    {
+                                        <!-- CSS-based Pie Chart -->
+                                        <div class="relative">
+                                            <div class="w-48 h-48 mx-auto mb-4">
+                                                @{
+                                                    var total = chart.DataPoints.Sum(dp => decimal.Parse(dp.Value.Replace("$", "").Replace(",", "")));
+                                                    var colors = new[] { "#3B82F6", "#EF4444", "#10B981", "#F59E0B", "#8B5CF6", "#06B6D4" };
+                                                    decimal cumulativePercentage = 0;
+                                                }
+
+                                                <svg viewBox="0 0 100 100" class="w-full h-full">
+                                                    <circle cx="50" cy="50" r="40" fill="transparent" stroke="#e5e7eb" stroke-width="8"/>
+                                                    @for (int i = 0; i < chart.DataPoints.Count; i++)
+                                                    {
+                                                        var value = decimal.Parse(chart.DataPoints[i].Value.Replace("$", "").Replace(",", ""));
+                                                        var percentage = (double)(value / total);
+                                                        var angle = percentage * 360;
+                                                        var startAngle = (double)cumulativePercentage * 360;
+                                                        var color = colors[i % colors.Length];
+
+                                                        <circle cx="50" cy="50" r="40"
+                                                                fill="transparent"
+                                                                stroke="@color"
+                                                                stroke-width="8"
+                                                                stroke-dasharray="@((percentage * 251.2).ToString("F1")) 251.2"
+                                                                stroke-dashoffset="@((251.2 - (double)cumulativePercentage * 251.2).ToString("F1"))"
+                                                                transform="rotate(-90 50 50)"/>
+
+                                                        cumulativePercentage += (decimal)percentage;
+                                                    }
+                                                </svg>
+                                            </div>
+
+                                            <!-- Legend -->
+                                            <div class="space-y-2">
+                                                @for (int i = 0; i < chart.DataPoints.Count; i++)
+                                                {
+                                                    var color = colors[i % colors.Length];
+                                                    var value = decimal.Parse(chart.DataPoints[i].Value.Replace("$", "").Replace(",", ""));
+                                                    var percentage = total > 0 ? (value / total) * 100 : 0;
+
+                                                    <div class="flex items-center justify-between text-sm">
+                                                        <div class="flex items-center">
+                                                            <div class="w-3 h-3 rounded-full mr-2" style="background-color: @color"></div>
+                                                            <span>@chart.DataPoints[i].Label</span>
+                                                        </div>
+                                                        <div class="text-right">
+                                                            <span class="font-medium">@chart.DataPoints[i].Value</span>
+                                                            <span class="text-gray-500 ml-1">(@percentage.ToString("F1")%)</span>
+                                                        </div>
+                                                    </div>
+                                                }
+                                            </div>
+                                        </div>
+                                    }
+                                    else if (chart.Type == "Line Chart")
+                                    {
+                                        <!-- CSS-based Line Chart -->
+                                        <div class="relative">
+                                            <div class="h-48 mb-4 flex items-end justify-between space-x-2 border-b border-l border-gray-300">
+                                                @{
+                                                    var maxValue = chart.DataPoints.Max(dp => decimal.Parse(dp.Value.Replace("%", "")));
+                                                }
+                                                @for (int i = 0; i < chart.DataPoints.Count; i++)
+                                                {
+                                                    var value = decimal.Parse(chart.DataPoints[i].Value.Replace("%", ""));
+                                                    var heightPercentage = maxValue > 0 ? (double)(value / maxValue) * 100 : 0;
+                                                    var color = value >= 90 ? "#EF4444" : value >= 75 ? "#F59E0B" : "#10B981";
+
+                                                    <div class="flex-1 flex flex-col items-center">
+                                                        <div class="w-full bg-gray-200 rounded-t relative" style="height: 180px;">
+                                                            <div class="absolute bottom-0 w-full rounded-t transition-all duration-500"
+                                                                 style="height: @(heightPercentage)%; background-color: @color"></div>
+                                                            <div class="absolute -top-6 left-1/2 transform -translate-x-1/2 text-xs font-medium">
+                                                                @chart.DataPoints[i].Value
+                                                            </div>
+                                                        </div>
+                                                        <div class="text-xs text-gray-600 mt-2 text-center">@chart.DataPoints[i].Label</div>
+                                                    </div>
+                                                }
+                                            </div>
+
+                                            <!-- Y-axis labels -->
+                                            <div class="absolute left-0 top-0 h-48 flex flex-col justify-between text-xs text-gray-500 -ml-8">
+                                                <span>@(maxValue)%</span>
+                                                <span>@(maxValue * 0.75m)%</span>
+                                                <span>@(maxValue * 0.5m)%</span>
+                                                <span>@(maxValue * 0.25m)%</span>
+                                                <span>0%</span>
+                                            </div>
+                                        </div>
+                                    }
+                                    else if (chart.Type == "Bar Chart")
+                                    {
+                                        <!-- CSS-based Bar Chart -->
+                                        <div class="space-y-3">
+                                            @{
+                                                var maxValue = chart.DataPoints.Max(dp => decimal.Parse(dp.Value.Replace("$", "").Replace(",", "")));
+                                            }
+                                            @for (int i = 0; i < chart.DataPoints.Count; i++)
+                                            {
+                                                var value = decimal.Parse(chart.DataPoints[i].Value.Replace("$", "").Replace(",", ""));
+                                                var widthPercentage = maxValue > 0 ? (double)(value / maxValue) * 100 : 0;
+                                                var colors = new[] { "#3B82F6", "#EF4444", "#10B981", "#F59E0B", "#8B5CF6" };
+                                                var color = colors[i % colors.Length];
+
+                                                <div class="flex items-center">
+                                                    <div class="w-24 text-sm text-gray-700 text-right mr-3">@chart.DataPoints[i].Label</div>
+                                                    <div class="flex-1 relative">
+                                                        <div class="w-full bg-gray-200 rounded h-6 relative overflow-hidden">
+                                                            <div class="absolute left-0 top-0 h-full rounded transition-all duration-700"
+                                                                 style="width: @(widthPercentage)%; background-color: @color"></div>
+                                                            <div class="absolute inset-0 flex items-center justify-end pr-2">
+                                                                <span class="text-xs font-medium text-white">@chart.DataPoints[i].Value</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            }
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <!-- Fallback display for other chart types -->
+                                        <div class="bg-gray-50 rounded-lg p-4">
+                                            <div class="text-sm text-gray-600 mb-2">
+                                                Chart Type: @chart.Type (@chart.DataPoints.Count data points)
+                                            </div>
+                                            <div class="space-y-1">
+                                                @foreach (var dp in chart.DataPoints)
+                                                {
+                                                    <div class="flex justify-between text-xs">
+                                                        <span>@dp.Label</span>
+                                                        <span class="font-medium">@dp.Value</span>
+                                                    </div>
+                                                }
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private string selectedReportType = "budget-summary";
+    private string selectedDateRange = "current-month";
+    private string selectedFormat = "web";
+    private DateOnly customStartDate = DateOnly.FromDateTime(DateTime.Now.AddDays(-30));
+    private DateOnly customEndDate = DateOnly.FromDateTime(DateTime.Now);
+
+    private bool isGenerating = false;
+    private List<ProcessingStep> processingSteps = new();
+    private GeneratedReport? generatedReport;
+
+    private async Task GenerateReport()
+    {
+        isGenerating = true;
+        generatedReport = null;
+
+        // Initialize processing steps for Template Method pattern
+        processingSteps = new List<ProcessingStep>
+        {
+            new ProcessingStep { Name = "Collecting Data Sources", IsActive = true },
+            new ProcessingStep { Name = "Validating Data Integrity" },
+            new ProcessingStep { Name = "Processing Calculations" },
+            new ProcessingStep { Name = "Formatting Output" },
+            new ProcessingStep { Name = "Finalizing Report" }
+        };
+
+        try
+        {
+            // Simulate Template Method execution
+            for (int i = 0; i < processingSteps.Count; i++)
+            {
+                // Mark current step as active
+                if (i > 0) processingSteps[i - 1].IsCompleted = true;
+                processingSteps[i].IsActive = true;
+                StateHasChanged();
+
+                // Simulate processing time
+                await Task.Delay(800);
+
+                // Complete current step
+                processingSteps[i].IsActive = false;
+                processingSteps[i].IsCompleted = true;
+            }
+
+            // Generate the actual report
+            await GenerateReportContent();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error generating report: {ex.Message}");
+        }
+        finally
+        {
+            isGenerating = false;
+        }
+    }
+
+    private async Task GenerateReportContent()
+    {
+        // Simulate calling the Template Method pattern API
+        try
+        {
+            var request = new
+            {
+                ReportType = selectedReportType,
+                DateRange = selectedDateRange,
+                StartDate = customStartDate,
+                EndDate = customEndDate,
+                Format = selectedFormat
+            };
+
+            // In a real implementation, this would call the Reports API
+            // For now, generate mock report data
+            generatedReport = new GeneratedReport
+            {
+                Title = GetReportTitle(),
+                ReportType = selectedReportType,
+                GeneratedAt = DateTime.Now,
+                PeriodDescription = GetPeriodDescription(),
+                RecordCount = GetMockRecordCount(),
+                Summary = GenerateMockSummary(),
+                Headers = GetReportHeaders(),
+                DataRows = GenerateMockDataRows(),
+                ChartData = GenerateMockChartData()
+            };
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error generating report content: {ex.Message}");
+        }
+    }
+
+    private string GetReportTitle()
+    {
+        return selectedReportType switch
+        {
+            "budget-summary" => "Budget Summary Report",
+            "spending-analysis" => "Spending Analysis Report",
+            "variance-report" => "Budget vs Actual Variance Report",
+            "category-breakdown" => "Category Breakdown Report",
+            "performance-report" => "Performance Metrics Report",
+            _ => "Budget Report"
+        };
+    }
+
+    private string GetPeriodDescription()
+    {
+        return selectedDateRange switch
+        {
+            "current-month" => DateTime.Now.ToString("MMMM yyyy"),
+            "last-30-days" => $"{DateTime.Now.AddDays(-30):MMM dd} - {DateTime.Now:MMM dd, yyyy}",
+            "last-90-days" => $"{DateTime.Now.AddDays(-90):MMM dd} - {DateTime.Now:MMM dd, yyyy}",
+            "current-quarter" => $"Q{(DateTime.Now.Month - 1) / 3 + 1} {DateTime.Now.Year}",
+            "custom" => $"{customStartDate:MMM dd} - {customEndDate:MMM dd, yyyy}",
+            _ => "Selected Period"
+        };
+    }
+
+    private int GetMockRecordCount()
+    {
+        return selectedReportType switch
+        {
+            "budget-summary" => 3,
+            "spending-analysis" => 45,
+            "variance-report" => 12,
+            "category-breakdown" => 8,
+            "performance-report" => 1,
+            _ => 10
+        };
+    }
+
+    private List<ReportSummary> GenerateMockSummary()
+    {
+        return selectedReportType switch
+        {
+            "budget-summary" => new List<ReportSummary>
+            {
+                new ReportSummary { Label = "Total Budgets", Value = "$4,500", Trend = "+5% vs last period" },
+                new ReportSummary { Label = "Total Spent", Value = "$3,850", Trend = "85.6% of budget" },
+                new ReportSummary { Label = "Remaining", Value = "$650", Trend = "14.4% available" }
+            },
+            "spending-analysis" => new List<ReportSummary>
+            {
+                new ReportSummary { Label = "Average Daily", Value = "$128.33", Trend = "+12% vs target" },
+                new ReportSummary { Label = "Largest Expense", Value = "$1,200", Trend = "Housing category" },
+                new ReportSummary { Label = "Transactions", Value = "45", Trend = "8 categories" }
+            },
+            "variance-report" => new List<ReportSummary>
+            {
+                new ReportSummary { Label = "Budget Variance", Value = "-$285", Trend = "6.3% over budget" },
+                new ReportSummary { Label = "Income Variance", Value = "+$150", Trend = "4.3% above planned" },
+                new ReportSummary { Label = "Net Variance", Value = "-$135", Trend = "3% under target" }
+            },
+            _ => new List<ReportSummary>
+            {
+                new ReportSummary { Label = "Total Items", Value = GetMockRecordCount().ToString(), Trend = "Processed items" }
+            }
+        };
+    }
+
+    private List<string> GetReportHeaders()
+    {
+        return selectedReportType switch
+        {
+            "budget-summary" => new List<string> { "Budget Name", "Planned", "Actual", "Variance", "Status" },
+            "spending-analysis" => new List<string> { "Date", "Description", "Amount", "Category", "Budget Impact" },
+            "variance-report" => new List<string> { "Category", "Planned", "Actual", "Variance", "Variance %" },
+            "category-breakdown" => new List<string> { "Category", "Count", "Total Amount", "Avg Amount", "% of Total" },
+            "performance-report" => new List<string> { "Metric", "Current Value", "Target", "Performance", "Trend" },
+            _ => new List<string> { "Item", "Value" }
+        };
+    }
+
+    private List<List<string>> GenerateMockDataRows()
+    {
+        return selectedReportType switch
+        {
+            "budget-summary" => new List<List<string>>
+            {
+                new List<string> { "November Budget", "$2,500", "$2,285", "-$215", "⚠ Over" },
+                new List<string> { "Weekly Groceries", "$400", "$350", "+$50", "✓ Under" },
+                new List<string> { "Transportation", "$300", "$285", "+$15", "✓ Under" }
+            },
+            "spending-analysis" => new List<List<string>>
+            {
+                new List<string> { "Nov 16", "Walmart Supercenter", "$85.50", "Food", "-$85.50" },
+                new List<string> { "Nov 15", "Shell Gas Station", "$45.00", "Transportation", "-$45.00" },
+                new List<string> { "Nov 14", "Netflix Subscription", "$15.99", "Entertainment", "-$15.99" }
+            },
+            "variance-report" => new List<List<string>>
+            {
+                new List<string> { "Housing", "$1,200", "$1,200", "$0", "0%" },
+                new List<string> { "Food", "$400", "$350", "+$50", "+12.5%" },
+                new List<string> { "Transportation", "$300", "$285", "+$15", "+5%" }
+            },
+            _ => new List<List<string>>
+            {
+                new List<string> { "Sample Data", "Sample Value" }
+            }
+        };
+    }
+
+    private List<ChartData> GenerateMockChartData()
+    {
+        return selectedReportType switch
+        {
+            "budget-summary" => new List<ChartData>
+            {
+                new ChartData
+                {
+                    Title = "Budget Overview",
+                    Type = "Bar Chart",
+                    DataPoints = new List<DataPoint>
+                    {
+                        new DataPoint { Label = "November Budget", Value = "$2,285" },
+                        new DataPoint { Label = "Weekly Groceries", Value = "$350" },
+                        new DataPoint { Label = "Transportation", Value = "$285" }
+                    }
+                }
+            },
+            "spending-analysis" => new List<ChartData>
+            {
+                new ChartData
+                {
+                    Title = "Daily Spending Pattern",
+                    Type = "Line Chart",
+                    DataPoints = new List<DataPoint>
+                    {
+                        new DataPoint { Label = "Mon", Value = "85%" },
+                        new DataPoint { Label = "Tue", Value = "92%" },
+                        new DataPoint { Label = "Wed", Value = "78%" },
+                        new DataPoint { Label = "Thu", Value = "95%" },
+                        new DataPoint { Label = "Fri", Value = "88%" }
+                    }
+                }
+            },
+            "variance-report" => new List<ChartData>
+            {
+                new ChartData
+                {
+                    Title = "Budget vs Actual Variance",
+                    Type = "Bar Chart",
+                    DataPoints = new List<DataPoint>
+                    {
+                        new DataPoint { Label = "Housing", Value = "$1,200" },
+                        new DataPoint { Label = "Food", Value = "$350" },
+                        new DataPoint { Label = "Transportation", Value = "$285" },
+                        new DataPoint { Label = "Entertainment", Value = "$120" }
+                    }
+                }
+            },
+            "category-breakdown" => new List<ChartData>
+            {
+                new ChartData
+                {
+                    Title = "Spending by Category",
+                    Type = "Pie Chart",
+                    DataPoints = new List<DataPoint>
+                    {
+                        new DataPoint { Label = "Housing", Value = "$1,200" },
+                        new DataPoint { Label = "Food", Value = "$350" },
+                        new DataPoint { Label = "Transportation", Value = "$285" },
+                        new DataPoint { Label = "Entertainment", Value = "$120" }
+                    }
+                }
+            },
+            "performance-report" => new List<ChartData>
+            {
+                new ChartData
+                {
+                    Title = "Budget Performance Trend",
+                    Type = "Line Chart",
+                    DataPoints = new List<DataPoint>
+                    {
+                        new DataPoint { Label = "Week 1", Value = "95%" },
+                        new DataPoint { Label = "Week 2", Value = "88%" },
+                        new DataPoint { Label = "Week 3", Value = "92%" },
+                        new DataPoint { Label = "Week 4", Value = "85%" }
+                    }
+                }
+            },
+            _ => new List<ChartData>()
+        };
+    }
+
+    private async Task ExportReport()
+    {
+        // In a real implementation, this would call the export API
+        Console.WriteLine($"Exporting {selectedReportType} report in {selectedFormat} format");
+    }
+
+    private async Task ShareReport()
+    {
+        // In a real implementation, this would call the sharing API
+        Console.WriteLine($"Sharing {selectedReportType} report");
+    }
+
+    // DTOs for Template Method Pattern
+    public class ProcessingStep
+    {
+        public string Name { get; set; } = "";
+        public bool IsActive { get; set; } = false;
+        public bool IsCompleted { get; set; } = false;
+    }
+
+    public class GeneratedReport
+    {
+        public string Title { get; set; } = "";
+        public string ReportType { get; set; } = "";
+        public DateTime GeneratedAt { get; set; }
+        public string PeriodDescription { get; set; } = "";
+        public int RecordCount { get; set; }
+        public List<ReportSummary> Summary { get; set; } = new();
+        public List<string> Headers { get; set; } = new();
+        public List<List<string>> DataRows { get; set; } = new();
+        public List<ChartData> ChartData { get; set; } = new();
+    }
+
+    public class ReportSummary
+    {
+        public string Label { get; set; } = "";
+        public string Value { get; set; } = "";
+        public string Trend { get; set; } = "";
+    }
+
+    public class ChartData
+    {
+        public string Title { get; set; } = "";
+        public string Type { get; set; } = "";
+        public List<DataPoint> DataPoints { get; set; } = new();
+    }
+
+    public class DataPoint
+    {
+        public string Label { get; set; } = "";
+        public string Value { get; set; } = "";
+    }
+}

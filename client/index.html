@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Budget System - Design Patterns Demo</title>
+    <link rel="stylesheet" href="/src/styles/input.css">
+    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>💰</text></svg>">
+</head>
+<body class="bg-gray-50">
+    <div id="app" x-data="budgetApp()">
+        <!-- Navigation Header -->
+        <nav class="bg-white shadow-soft border-b border-gray-200">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between items-center h-16">
+                    <!-- Logo -->
+                    <div class="flex items-center space-x-3">
+                        <div class="bg-gradient-to-r from-primary-500 to-purple-600 p-2 rounded-lg">
+                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+                            </svg>
+                        </div>
+                        <div>
+                            <h1 class="text-xl font-bold text-gray-900">Budget System</h1>
+                            <p class="text-sm text-gray-500">Design Patterns Demo</p>
+                        </div>
+                    </div>
+
+                    <!-- Navigation Pills -->
+                    <div class="flex space-x-1 bg-gray-100 p-1 rounded-lg">
+                        <button
+                            @click="activeTab = 'dashboard'"
+                            :class="activeTab === 'dashboard' ? 'bg-white shadow-sm text-primary-600' : 'text-gray-600 hover:text-gray-900'"
+                            class="px-4 py-2 text-sm font-medium rounded-md transition-all duration-200"
+                        >
+                            Dashboard
+                        </button>
+                        <button
+                            @click="activeTab = 'patterns'"
+                            :class="activeTab === 'patterns' ? 'bg-white shadow-sm text-primary-600' : 'text-gray-600 hover:text-gray-900'"
+                            class="px-4 py-2 text-sm font-medium rounded-md transition-all duration-200"
+                        >
+                            Design Patterns
+                        </button>
+                        <button
+                            @click="activeTab = 'transactions'"
+                            :class="activeTab === 'transactions' ? 'bg-white shadow-sm text-primary-600' : 'text-gray-600 hover:text-gray-900'"
+                            class="px-4 py-2 text-sm font-medium rounded-md transition-all duration-200"
+                        >
+                            Transactions
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+            <!-- Dashboard Tab -->
+            <div x-show="activeTab === 'dashboard'" x-transition:enter="animate-fade-in">
+                <div class="mb-8">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-2">Budget Overview</h2>
+                    <p class="text-gray-600">Monitor your spending patterns and budget performance in real-time</p>
+                </div>
+
+                <!-- Stats Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <!-- Total Budget Card -->
+                    <div class="card">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm font-medium text-gray-600">Total Budget</p>
+                                <p class="text-2xl font-bold text-gray-900" x-text="formatCurrency(dashboardData.totalBudget)">$1,000.00</p>
+                            </div>
+                            <div class="p-3 bg-primary-100 rounded-lg">
+                                <svg class="w-6 h-6 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <div class="flex items-center text-sm text-success-600">
+                                <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M3.293 9.707a1 1 0 010-1.414l6-6a1 1 0 011.414 0l6 6a1 1 0 01-1.414 1.414L11 5.414V17a1 1 0 11-2 0V5.414L4.707 9.707a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
+                                </svg>
+                                +12% from last month
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Spent Amount Card -->
+                    <div class="card">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm font-medium text-gray-600">Amount Spent</p>
+                                <p class="text-2xl font-bold text-gray-900" x-text="formatCurrency(dashboardData.totalSpent)">$750.00</p>
+                            </div>
+                            <div class="p-3 bg-warning-100 rounded-lg">
+                                <svg class="w-6 h-6 text-warning-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6"></path>
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <div :class="dashboardData.spentPercentage > 80 ? 'text-danger-600' : 'text-warning-600'" class="text-sm font-medium">
+                                <span x-text="dashboardData.spentPercentage">75</span>% of budget used
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Remaining Card -->
+                    <div class="card">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm font-medium text-gray-600">Remaining</p>
+                                <p class="text-2xl font-bold text-gray-900" x-text="formatCurrency(dashboardData.remaining)">$250.00</p>
+                            </div>
+                            <div class="p-3 bg-success-100 rounded-lg">
+                                <svg class="w-6 h-6 text-success-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <div class="text-sm text-success-600 font-medium">
+                                <span x-text="Math.round((dashboardData.remaining / dashboardData.totalBudget) * 100)">25</span>% remaining
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Transactions Card -->
+                    <div class="card">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm font-medium text-gray-600">Transactions</p>
+                                <p class="text-2xl font-bold text-gray-900" x-text="dashboardData.transactionCount">24</p>
+                            </div>
+                            <div class="p-3 bg-purple-100 rounded-lg">
+                                <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <div class="text-sm text-gray-600">
+                                This month
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts Row -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                    <!-- Spending Trend Chart -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="text-lg font-semibold text-gray-900">Spending Trend</h3>
+                            <div class="badge-success">This Month</div>
+                        </div>
+                        <div class="h-64">
+                            <canvas id="spendingChart" width="400" height="200"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Category Breakdown -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="text-lg font-semibold text-gray-900">Category Breakdown</h3>
+                            <div class="badge-warning">Live Data</div>
+                        </div>
+                        <div class="h-64">
+                            <canvas id="categoryChart" width="400" height="200"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Transactions -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="text-lg font-semibold text-gray-900">Recent Transactions</h3>
+                        <button @click="loadRecentTransactions()" class="btn-secondary text-sm">
+                            <svg class="w-4 h-4 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                            </svg>
+                            Refresh
+                        </button>
+                    </div>
+                    <div class="overflow-hidden">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Transaction</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                <template x-for="transaction in recentTransactions" :key="transaction.id">
+                                    <tr class="hover:bg-gray-50 transition-colors duration-150">
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="flex items-center">
+                                                <div class="text-sm font-medium text-gray-900" x-text="transaction.merchantName"></div>
+                                                <div class="text-xs text-gray-500 ml-2" x-text="transaction.description"></div>
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <span class="badge-success" x-text="transaction.categoryName || 'Uncategorized'"></span>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div :class="transaction.transactionType === 'CREDIT' ? 'text-success-600' : 'text-danger-600'" class="text-sm font-medium">
+                                                <span x-text="transaction.transactionType === 'CREDIT' ? '+' : '-'"></span><span x-text="formatCurrency(Math.abs(transaction.amount))"></span>
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            <span x-text="formatDate(transaction.date)"></span>
+                                        </td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Design Patterns Tab -->
+            <div x-show="activeTab === 'patterns'" x-transition:enter="animate-fade-in">
+                <div class="mb-8">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-2">Design Patterns Demo</h2>
+                    <p class="text-gray-600">Interactive demonstrations of behavioral design patterns</p>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Strategy Pattern Card -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="text-lg font-semibold text-gray-900">🎯 Strategy Pattern</h3>
+                            <div class="badge-success">Budget Calculations</div>
+                        </div>
+                        <p class="text-gray-600 mb-4">Different algorithms to calculate available budget amounts based on spending patterns.</p>
+
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Current Spending</label>
+                                <input x-model.number="strategyDemo.currentSpending" type="number" class="input-field" placeholder="750.00" step="0.01">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Strategy Type</label>
+                                <select x-model="strategyDemo.strategyType" class="select-field">
+                                    <option value="fixed">Fixed Budget</option>
+                                    <option value="rolling">Rolling Budget</option>
+                                    <option value="percentagebased">Percentage Based</option>
+                                </select>
+                            </div>
+                            <button @click="testStrategyPattern()" class="btn-primary w-full">Calculate Budget</button>
+
+                            <div x-show="strategyDemo.result" x-transition:enter="animate-slide-up" class="bg-gray-50 p-4 rounded-lg">
+                                <h4 class="font-medium text-gray-900 mb-2">Result:</h4>
+                                <div class="grid grid-cols-2 gap-4 text-sm">
+                                    <div>
+                                        <span class="text-gray-600">Strategy:</span>
+                                        <span x-text="strategyDemo.result?.strategyUsed" class="font-medium"></span>
+                                    </div>
+                                    <div>
+                                        <span class="text-gray-600">Available:</span>
+                                        <span x-text="formatCurrency(strategyDemo.result?.availableAmount || 0)" class="font-medium text-success-600"></span>
+                                    </div>
+                                </div>
+                                <div x-show="strategyDemo.result?.warnings?.length" class="mt-2">
+                                    <template x-for="warning in strategyDemo.result?.warnings" :key="warning">
+                                        <div class="badge-warning" x-text="warning"></div>
+                                    </template>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Observer Pattern Card -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="text-lg font-semibold text-gray-900">👀 Observer Pattern</h3>
+                            <div class="badge-warning">Budget Notifications</div>
+                        </div>
+                        <p class="text-gray-600 mb-4">Real-time notifications when budget limits are exceeded or goals are met.</p>
+
+                        <div class="space-y-4">
+                            <div class="bg-blue-50 border border-blue-200 p-4 rounded-lg">
+                                <h4 class="font-medium text-blue-900 mb-2">Active Observers:</h4>
+                                <div class="space-y-2 text-sm">
+                                    <div class="flex items-center">
+                                        <div class="w-2 h-2 bg-success-500 rounded-full mr-2"></div>
+                                        <span>Email Notification Observer</span>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <div class="w-2 h-2 bg-success-500 rounded-full mr-2"></div>
+                                        <span>Database Log Observer</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div id="notifications" class="space-y-2 max-h-40 overflow-y-auto">
+                                <!-- Notifications will be dynamically added here -->
+                            </div>
+
+                            <button @click="triggerNotification()" class="btn-primary w-full">Trigger Test Notification</button>
+                        </div>
+                    </div>
+
+                    <!-- Chain of Responsibility Card -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="text-lg font-semibold text-gray-900">🔗 Chain of Responsibility</h3>
+                            <div class="badge-success">Transaction Processing</div>
+                        </div>
+                        <p class="text-gray-600 mb-4">Automatically categorize bank transactions through a chain of handlers.</p>
+
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Account ID</label>
+                                <input x-model="chainDemo.accountId" type="text" class="input-field" placeholder="account123">
+                            </div>
+                            <button @click="processTransactions()" class="btn-primary w-full" :disabled="chainDemo.loading">
+                                <span x-show="!chainDemo.loading">Process Transactions</span>
+                                <span x-show="chainDemo.loading" class="flex items-center">
+                                    <svg class="animate-spin -ml-1 mr-3 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    Processing...
+                                </span>
+                            </button>
+
+                            <div x-show="chainDemo.summary" x-transition:enter="animate-slide-up" class="bg-gray-50 p-4 rounded-lg">
+                                <h4 class="font-medium text-gray-900 mb-2">Processing Summary:</h4>
+                                <div class="grid grid-cols-2 gap-4 text-sm">
+                                    <div>
+                                        <span class="text-gray-600">Total:</span>
+                                        <span x-text="chainDemo.summary?.totalTransactions || 0" class="font-medium"></span>
+                                    </div>
+                                    <div>
+                                        <span class="text-gray-600">Income:</span>
+                                        <span x-text="formatCurrency(chainDemo.summary?.totalIncome || 0)" class="font-medium text-success-600"></span>
+                                    </div>
+                                    <div>
+                                        <span class="text-gray-600">Expenses:</span>
+                                        <span x-text="formatCurrency(chainDemo.summary?.totalExpenses || 0)" class="font-medium text-danger-600"></span>
+                                    </div>
+                                    <div>
+                                        <span class="text-gray-600">Transfers:</span>
+                                        <span x-text="formatCurrency(chainDemo.summary?.totalTransfers || 0)" class="font-medium text-gray-600"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Template Method Card -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="text-lg font-semibold text-gray-900">📊 Template Method</h3>
+                            <div class="badge-danger">Report Generation</div>
+                        </div>
+                        <p class="text-gray-600 mb-4">Generate different types of reports using a common template structure.</p>
+
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Report Type</label>
+                                <select x-model="templateDemo.reportType" class="select-field">
+                                    <option value="summary">Summary Report</option>
+                                    <option value="detailed">Detailed Report</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">User ID</label>
+                                <input x-model="templateDemo.userId" type="text" class="input-field" placeholder="123e4567-e89b-12d3-a456-426614174000">
+                            </div>
+                            <button @click="generateReport()" class="btn-primary w-full" :disabled="templateDemo.loading">
+                                <span x-show="!templateDemo.loading">Generate Report</span>
+                                <span x-show="templateDemo.loading">Generating...</span>
+                            </button>
+
+                            <div x-show="templateDemo.report" x-transition:enter="animate-slide-up" class="bg-gray-900 text-gray-100 p-4 rounded-lg text-xs font-mono overflow-x-auto max-h-60 overflow-y-auto">
+                                <pre x-text="templateDemo.report"></pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Transactions Tab -->
+            <div x-show="activeTab === 'transactions'" x-transition:enter="animate-fade-in">
+                <div class="mb-8">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-2">Transaction Management</h2>
+                    <p class="text-gray-600">View and analyze your financial transactions</p>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="text-lg font-semibold text-gray-900">All Transactions</h3>
+                        <div class="flex space-x-2">
+                            <button @click="loadAllTransactions()" class="btn-secondary">Load Transactions</button>
+                            <button @click="processAllTransactions()" class="btn-primary">Auto-Categorize</button>
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Merchant</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                <template x-for="transaction in allTransactions" :key="transaction.id || Math.random()">
+                                    <tr class="hover:bg-gray-50">
+                                        <td class="px-6 py-4 text-sm text-gray-900" x-text="transaction.description"></td>
+                                        <td class="px-6 py-4 text-sm text-gray-900" x-text="transaction.merchantName"></td>
+                                        <td class="px-6 py-4 text-sm font-medium" :class="transaction.transactionType === 'CREDIT' ? 'text-success-600' : 'text-danger-600'">
+                                            <span x-text="transaction.transactionType === 'CREDIT' ? '+' : '-'"></span><span x-text="formatCurrency(Math.abs(transaction.amount))"></span>
+                                        </td>
+                                        <td class="px-6 py-4 text-sm text-gray-500" x-text="transaction.transactionType"></td>
+                                        <td class="px-6 py-4">
+                                            <span x-show="transaction.categoryName" class="badge-success" x-text="transaction.categoryName"></span>
+                                            <span x-show="!transaction.categoryName" class="badge-warning">Uncategorized</span>
+                                        </td>
+                                        <td class="px-6 py-4 text-sm text-gray-500" x-text="formatDate(transaction.date)"></td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="/src/utils/api.js"></script>
+    <script src="/src/utils/charts.js"></script>
+    <script src="/src/components/budgetApp.js"></script>
+</body>
+</html>

@@ -1,0 +1,745 @@
+@page "/budgets/{BudgetId:guid}"
+@rendermode InteractiveServer
+@using System.Net.Http.Json
+@inject HttpClient Http
+@inject NavigationManager Navigation
+
+<PageTitle>Budget Details - @currentBudget?.Name</PageTitle>
+
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex justify-between items-center">
+        <div class="flex items-center space-x-4">
+            <button @onclick="NavigateBack" class="text-gray-600 hover:text-gray-700">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                </svg>
+            </button>
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900">@currentBudget?.Name</h1>
+                <p class="text-gray-500">@currentBudget?.PeriodStart.ToString("MMM dd") - @currentBudget?.PeriodEnd.ToString("MMM dd, yyyy")</p>
+            </div>
+        </div>
+        <div class="flex space-x-3">
+            <button @onclick="ToggleEnhancedView" class="@(showEnhancedView ? "bg-purple-600 hover:bg-purple-700" : "bg-gray-600 hover:bg-gray-700") text-white px-4 py-2 rounded-lg">
+                @(showEnhancedView ? "🔧 Enhanced" : "📊 Basic") View
+            </button>
+            <button @onclick="() => showAddIncomeModal = true" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg">
+                + Add Income
+            </button>
+            <button @onclick="() => showAddExpenseModal = true" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg">
+                + Add Expense
+            </button>
+        </div>
+    </div>
+
+    <!-- Budget Overview Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div class="bg-green-50 rounded-xl p-6 border border-green-200">
+            <h3 class="text-sm font-medium text-green-800 mb-1">Planned Income</h3>
+            <p class="text-2xl font-bold text-green-900">$@plannedIncomes.Sum(i => i.PlannedAmount).ToString("N2")</p>
+            <p class="text-xs text-green-600">Actual: $@plannedIncomes.Sum(i => i.LinkedAmount).ToString("N2")</p>
+        </div>
+
+        <div class="bg-red-50 rounded-xl p-6 border border-red-200">
+            <h3 class="text-sm font-medium text-red-800 mb-1">Planned Expenses</h3>
+            <p class="text-2xl font-bold text-red-900">$@plannedExpenses.Sum(e => e.PlannedAmount).ToString("N2")</p>
+            <p class="text-xs text-red-600">Actual: $@plannedExpenses.Sum(e => e.LinkedAmount).ToString("N2")</p>
+        </div>
+
+        <div class="bg-blue-50 rounded-xl p-6 border border-blue-200">
+            <h3 class="text-sm font-medium text-blue-800 mb-1">Net Planned</h3>
+            <p class="text-2xl font-bold text-blue-900">$@GetNetPlanned().ToString("N2")</p>
+            <p class="text-xs text-blue-600">Actual: $@GetNetActual().ToString("N2")</p>
+        </div>
+
+        <div class="bg-purple-50 rounded-xl p-6 border border-purple-200">
+            <h3 class="text-sm font-medium text-purple-800 mb-1">Variance</h3>
+            <p class="text-2xl font-bold @(GetVariance() >= 0 ? "text-green-900" : "text-red-900")">
+                @(GetVariance() >= 0 ? "+" : "")$@GetVariance().ToString("N2")
+            </p>
+            <p class="text-xs text-purple-600">vs Planned</p>
+        </div>
+    </div>
+
+    <!-- Enhanced Analytics Section (Decorator Pattern) -->
+    @if (showEnhancedView)
+    {
+        <div class="bg-white rounded-xl shadow-soft border border-gray-100 p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-xl font-semibold text-gray-900">Enhanced Analytics</h2>
+                <span class="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded">Decorator Pattern</span>
+            </div>
+
+            @if (enhancedBudgetData != null)
+            {
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                    <div class="bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg p-4">
+                        <h4 class="text-sm font-medium text-blue-800 mb-2">Spending Velocity</h4>
+                        <div class="text-lg font-bold text-blue-900">$@enhancedBudgetData.DailySpendingRate.ToString("F2")/day</div>
+                        <div class="text-xs text-blue-600">Current rate</div>
+                    </div>
+                    <div class="bg-gradient-to-r from-green-50 to-green-100 rounded-lg p-4">
+                        <h4 class="text-sm font-medium text-green-800 mb-2">Efficiency Score</h4>
+                        <div class="text-lg font-bold text-green-900">@enhancedBudgetData.EfficiencyRatio.ToString("F2")</div>
+                        <div class="text-xs text-green-600">@(enhancedBudgetData.EfficiencyRatio < 1 ? "Excellent" : enhancedBudgetData.EfficiencyRatio < 1.2 ? "Good" : "Needs attention")</div>
+                    </div>
+                    <div class="bg-gradient-to-r from-purple-50 to-purple-100 rounded-lg p-4">
+                        <h4 class="text-sm font-medium text-purple-800 mb-2">Projected End</h4>
+                        <div class="text-lg font-bold text-purple-900">$@enhancedBudgetData.ProjectedEndAmount.ToString("F2")</div>
+                        <div class="text-xs text-purple-600">End of period estimate</div>
+                    </div>
+                </div>
+
+                <!-- Progress Comparison -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <h4 class="text-sm font-medium text-gray-700 mb-2">Time vs Spending Progress</h4>
+                        <div class="space-y-3">
+                            <div>
+                                <div class="flex justify-between text-xs mb-1">
+                                    <span>Time Progress</span>
+                                    <span>@((enhancedBudgetData.TimeProgress * 100).ToString("F1"))%</span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-2">
+                                    <div class="bg-blue-500 h-2 rounded-full" style="width: @((enhancedBudgetData.TimeProgress * 100).ToString("F1"))%"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-xs mb-1">
+                                    <span>Spending Progress</span>
+                                    <span>@((enhancedBudgetData.SpendingProgress * 100).ToString("F1"))%</span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-2">
+                                    <div class="@(enhancedBudgetData.SpendingProgress > enhancedBudgetData.TimeProgress ? "bg-red-500" : "bg-green-500") h-2 rounded-full"
+                                         style="width: @((enhancedBudgetData.SpendingProgress * 100).ToString("F1"))%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Smart Alerts -->
+                    <div>
+                        <h4 class="text-sm font-medium text-gray-700 mb-2">Smart Alerts</h4>
+                        @if (budgetAlerts.Any())
+                        {
+                            <div class="space-y-2">
+                                @foreach (var alert in budgetAlerts.Take(3))
+                                {
+                                    <div class="@GetAlertClass(alert.Type) border rounded p-2">
+                                        <div class="text-xs font-medium">@alert.Type</div>
+                                        <div class="text-xs">@alert.Message</div>
+                                    </div>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="text-xs text-gray-500 italic">No alerts - budget performing well</div>
+                        }
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="text-center py-4">
+                    <button @onclick="LoadEnhancedData" class="btn-primary">
+                        Load Enhanced Analytics
+                    </button>
+                </div>
+            }
+        </div>
+    }
+
+    <!-- Planned Income & Expenses Tabs -->
+    <div class="bg-white rounded-xl shadow-soft border border-gray-100">
+        <div class="border-b border-gray-200">
+            <nav class="flex space-x-8 px-6">
+                <button @onclick="SetIncomeTab" class="@GetIncomeTabClass()">
+                    Planned Income (@plannedIncomes.Count())
+                </button>
+                <button @onclick="SetExpensesTab" class="@GetExpensesTabClass()">
+                    Planned Expenses (@plannedExpenses.Count())
+                </button>
+                <button @onclick="SetTransactionsTab" class="@GetTransactionsTabClass()">
+                    Linked Transactions
+                </button>
+            </nav>
+        </div>
+
+        <div class="p-6">
+            @if (activeTab == "income")
+            {
+                @if (plannedIncomes.Any())
+                {
+                    <div class="space-y-4">
+                        @foreach (var income in plannedIncomes)
+                        {
+                            <div class="flex items-center justify-between p-4 bg-green-50 rounded-lg border border-green-200">
+                                <div class="flex-1">
+                                    <h4 class="font-medium text-gray-900">@income.Name</h4>
+                                    <p class="text-sm text-gray-600">@income.Description</p>
+                                    <p class="text-xs text-gray-500">@income.Category @(income.DueDate.HasValue ? $"• Due: {income.DueDate.Value:MMM dd}" : "")</p>
+                                </div>
+                                <div class="text-right">
+                                    <p class="font-semibold text-green-700">$@income.PlannedAmount.ToString("N2")</p>
+                                    <p class="text-xs text-green-600">Linked: $@income.LinkedAmount.ToString("N2")</p>
+                                    <div class="w-16 bg-green-200 rounded-full h-1 mt-1">
+                                        <div class="bg-green-500 h-1 rounded-full" style="width: @Math.Min(100, income.GetUtilizationPercentage())%"></div>
+                                    </div>
+                                </div>
+                                <div class="ml-4 flex space-x-2">
+                                    <button @onclick="() => EditPlannedItem(income)" class="text-blue-600 hover:text-blue-700">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                                        </svg>
+                                    </button>
+                                    <button @onclick="() => DeletePlannedItem(income.Id)" class="text-red-600 hover:text-red-700">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center py-8">
+                        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                        </svg>
+                        <h3 class="mt-2 text-sm font-medium text-gray-900">No planned income items</h3>
+                        <p class="mt-1 text-sm text-gray-500">Add income sources to track against actual deposits.</p>
+                    </div>
+                }
+            }
+            else if (activeTab == "expenses")
+            {
+                @if (plannedExpenses.Any())
+                {
+                    <div class="space-y-4">
+                        @foreach (var expense in plannedExpenses)
+                        {
+                            <div class="flex items-center justify-between p-4 bg-red-50 rounded-lg border border-red-200">
+                                <div class="flex-1">
+                                    <h4 class="font-medium text-gray-900">@expense.Name</h4>
+                                    <p class="text-sm text-gray-600">@expense.Description</p>
+                                    <p class="text-xs text-gray-500">@expense.Category @(expense.DueDate.HasValue ? $"• Due: {expense.DueDate.Value:MMM dd}" : "")</p>
+                                </div>
+                                <div class="text-right">
+                                    <p class="font-semibold text-red-700">$@expense.PlannedAmount.ToString("N2")</p>
+                                    <p class="text-xs text-red-600">Linked: $@expense.LinkedAmount.ToString("N2")</p>
+                                    <div class="w-16 bg-red-200 rounded-full h-1 mt-1">
+                                        <div class="@(expense.GetUtilizationPercentage() > 100 ? "bg-red-600" : "bg-red-500") h-1 rounded-full"
+                                             style="width: @Math.Min(100, expense.GetUtilizationPercentage())%"></div>
+                                    </div>
+                                </div>
+                                <div class="ml-4 flex space-x-2">
+                                    <button @onclick="() => EditPlannedItem(expense)" class="text-blue-600 hover:text-blue-700">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                                        </svg>
+                                    </button>
+                                    <button @onclick="() => DeletePlannedItem(expense.Id)" class="text-red-600 hover:text-red-700">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center py-8">
+                        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                        </svg>
+                        <h3 class="mt-2 text-sm font-medium text-gray-900">No planned expense items</h3>
+                        <p class="mt-1 text-sm text-gray-500">Add expense categories to track your spending against.</p>
+                    </div>
+                }
+            }
+            else if (activeTab == "transactions")
+            {
+                <div class="text-center py-8">
+                    <p class="text-gray-500">Transaction linking interface will be implemented here.</p>
+                    <p class="text-sm text-gray-400 mt-2">This will show bank transactions and allow linking to planned items.</p>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Add Income Modal -->
+@if (showAddIncomeModal)
+{
+    <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-xl shadow-xl p-6 w-full max-w-lg">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-semibold text-gray-900">Add Planned Income</h2>
+                <button @onclick="() => showAddIncomeModal = false" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+
+            <form @onsubmit="AddPlannedIncome" @onsubmit:preventDefault="true">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Income Source Name</label>
+                        <input @bind="newIncome.Name" type="text" class="input-field" placeholder="Monthly Salary" required />
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                        <input @bind="newIncome.Description" type="text" class="input-field" placeholder="Regular monthly salary" />
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Planned Amount</label>
+                            <input @bind="newIncome.PlannedAmount" type="number" step="0.01" class="input-field" placeholder="3000.00" required />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                            <select @bind="newIncome.Category" class="select-field" required>
+                                <option value="">Select Category</option>
+                                <option value="Salary">Salary</option>
+                                <option value="Freelance">Freelance</option>
+                                <option value="Investment">Investment</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Due Date (Optional)</label>
+                        <input @bind="newIncome.DueDate" type="date" class="input-field" />
+                    </div>
+                    <div class="flex items-center">
+                        <input @bind="newIncome.IsRecurring" type="checkbox" class="rounded border-gray-300 text-blue-600 mr-2" />
+                        <label class="text-sm text-gray-700">This is a recurring income</label>
+                    </div>
+                </div>
+
+                <div class="flex justify-end space-x-3 mt-6 pt-4 border-t">
+                    <button type="button" @onclick="() => showAddIncomeModal = false" class="btn-secondary">Cancel</button>
+                    <button type="submit" class="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg">Add Income</button>
+                </div>
+            </form>
+        </div>
+    </div>
+}
+
+<!-- Add Expense Modal -->
+@if (showAddExpenseModal)
+{
+    <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-xl shadow-xl p-6 w-full max-w-lg">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-semibold text-gray-900">Add Planned Expense</h2>
+                <button @onclick="() => showAddExpenseModal = false" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+
+            <form @onsubmit="AddPlannedExpense" @onsubmit:preventDefault="true">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Expense Name</label>
+                        <input @bind="newExpense.Name" type="text" class="input-field" placeholder="Monthly Rent" required />
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                        <input @bind="newExpense.Description" type="text" class="input-field" placeholder="Apartment rent payment" />
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Planned Amount</label>
+                            <input @bind="newExpense.PlannedAmount" type="number" step="0.01" class="input-field" placeholder="1200.00" required />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                            <select @bind="newExpense.Category" class="select-field" required>
+                                <option value="">Select Category</option>
+                                <option value="Housing">Housing</option>
+                                <option value="Food">Food</option>
+                                <option value="Transportation">Transportation</option>
+                                <option value="Entertainment">Entertainment</option>
+                                <option value="Shopping">Shopping</option>
+                                <option value="Bills">Bills</option>
+                                <option value="Health">Health</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Due Date (Optional)</label>
+                        <input @bind="newExpense.DueDate" type="date" class="input-field" />
+                    </div>
+                    <div class="flex items-center">
+                        <input @bind="newExpense.IsRecurring" type="checkbox" class="rounded border-gray-300 text-blue-600 mr-2" />
+                        <label class="text-sm text-gray-700">This is a recurring expense</label>
+                    </div>
+                </div>
+
+                <div class="flex justify-end space-x-3 mt-6 pt-4 border-t">
+                    <button type="button" @onclick="() => showAddExpenseModal = false" class="btn-secondary">Cancel</button>
+                    <button type="submit" class="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-lg">Add Expense</button>
+                </div>
+            </form>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public Guid BudgetId { get; set; }
+
+    private BudgetDto? currentBudget;
+    private List<PlannedItemDto> plannedIncomes = new();
+    private List<PlannedItemDto> plannedExpenses = new();
+    private string activeTab = "expenses";
+
+    private bool showAddIncomeModal = false;
+    private bool showAddExpenseModal = false;
+    private PlannedItemDto newIncome = new();
+    private PlannedItemDto newExpense = new();
+
+    // Decorator Pattern Integration
+    private bool showEnhancedView = false;
+    private EnhancedBudgetData? enhancedBudgetData;
+    private List<BudgetAlert> budgetAlerts = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadBudgetDetails();
+        await LoadPlannedItems();
+    }
+
+    private async Task LoadBudgetDetails()
+    {
+        // For now, use mock data. Later connect to API
+        currentBudget = new BudgetDto
+        {
+            Id = BudgetId,
+            Name = "November 2024 Budget",
+            PeriodStart = new DateTime(2024, 11, 1),
+            PeriodEnd = new DateTime(2024, 11, 30),
+            Amount = 2500,
+            SpentAmount = 1850,
+            PlannedIncomeAmount = 3500,
+            ActualIncomeAmount = 3500,
+            Status = "OnTrack"
+        };
+    }
+
+    private async Task LoadPlannedItems()
+    {
+        // Mock planned income items
+        plannedIncomes = new List<PlannedItemDto>
+        {
+            new PlannedItemDto
+            {
+                Id = Guid.NewGuid(),
+                Name = "Monthly Salary",
+                Description = "Regular monthly salary from employer",
+                PlannedAmount = 3000,
+                LinkedAmount = 3000,
+                Category = "Salary",
+                DueDate = new DateTime(2024, 11, 1),
+                IsRecurring = true
+            },
+            new PlannedItemDto
+            {
+                Id = Guid.NewGuid(),
+                Name = "Freelance Project",
+                Description = "Web development project payment",
+                PlannedAmount = 500,
+                LinkedAmount = 500,
+                Category = "Freelance",
+                DueDate = new DateTime(2024, 11, 15),
+                IsRecurring = false
+            }
+        };
+
+        // Mock planned expense items
+        plannedExpenses = new List<PlannedItemDto>
+        {
+            new PlannedItemDto
+            {
+                Id = Guid.NewGuid(),
+                Name = "Apartment Rent",
+                Description = "Monthly rent payment",
+                PlannedAmount = 1200,
+                LinkedAmount = 1200,
+                Category = "Housing",
+                DueDate = new DateTime(2024, 11, 1),
+                IsRecurring = true
+            },
+            new PlannedItemDto
+            {
+                Id = Guid.NewGuid(),
+                Name = "Groceries",
+                Description = "Weekly grocery shopping",
+                PlannedAmount = 400,
+                LinkedAmount = 350,
+                Category = "Food",
+                IsRecurring = true
+            },
+            new PlannedItemDto
+            {
+                Id = Guid.NewGuid(),
+                Name = "Gas & Transportation",
+                Description = "Monthly transportation costs",
+                PlannedAmount = 300,
+                LinkedAmount = 280,
+                Category = "Transportation",
+                IsRecurring = true
+            },
+            new PlannedItemDto
+            {
+                Id = Guid.NewGuid(),
+                Name = "Entertainment",
+                Description = "Movies, dining out, subscriptions",
+                PlannedAmount = 200,
+                LinkedAmount = 120,
+                Category = "Entertainment",
+                IsRecurring = false
+            }
+        };
+    }
+
+    private async Task AddPlannedIncome()
+    {
+        newIncome.Id = Guid.NewGuid();
+        plannedIncomes.Add(newIncome);
+        newIncome = new PlannedItemDto();
+        showAddIncomeModal = false;
+        StateHasChanged();
+    }
+
+    private async Task AddPlannedExpense()
+    {
+        newExpense.Id = Guid.NewGuid();
+        plannedExpenses.Add(newExpense);
+        newExpense = new PlannedItemDto();
+        showAddExpenseModal = false;
+        StateHasChanged();
+    }
+
+    private void EditPlannedItem(PlannedItemDto item)
+    {
+        // TODO: Implement edit functionality
+    }
+
+    private async Task DeletePlannedItem(Guid itemId)
+    {
+        plannedIncomes.RemoveAll(i => i.Id == itemId);
+        plannedExpenses.RemoveAll(e => e.Id == itemId);
+        StateHasChanged();
+    }
+
+    private decimal GetNetPlanned()
+    {
+        return plannedIncomes.Sum(i => i.PlannedAmount) - plannedExpenses.Sum(e => e.PlannedAmount);
+    }
+
+    private decimal GetNetActual()
+    {
+        return plannedIncomes.Sum(i => i.LinkedAmount) - plannedExpenses.Sum(e => e.LinkedAmount);
+    }
+
+    private decimal GetVariance()
+    {
+        return GetNetActual() - GetNetPlanned();
+    }
+
+    private string GetTabClass(string tab)
+    {
+        var baseClass = "border-b-2 py-4 px-1 font-medium text-sm";
+        return activeTab == tab
+            ? $"{baseClass} border-blue-500 text-blue-600"
+            : $"{baseClass} border-transparent text-gray-500 hover:text-gray-700";
+    }
+
+    private void NavigateBack()
+    {
+        Navigation.NavigateTo("/budgets");
+    }
+
+    private void SetIncomeTab()
+    {
+        activeTab = "income";
+        StateHasChanged();
+    }
+
+    private void SetExpensesTab()
+    {
+        activeTab = "expenses";
+        StateHasChanged();
+    }
+
+    private void SetTransactionsTab()
+    {
+        activeTab = "transactions";
+        StateHasChanged();
+    }
+
+    private string GetIncomeTabClass()
+    {
+        var baseClass = "border-b-2 py-4 px-1 font-medium text-sm";
+        return activeTab == "income"
+            ? $"{baseClass} border-green-500 text-green-600"
+            : $"{baseClass} border-transparent text-gray-500 hover:text-gray-700";
+    }
+
+    private string GetExpensesTabClass()
+    {
+        var baseClass = "border-b-2 py-4 px-1 font-medium text-sm";
+        return activeTab == "expenses"
+            ? $"{baseClass} border-red-500 text-red-600"
+            : $"{baseClass} border-transparent text-gray-500 hover:text-gray-700";
+    }
+
+    private string GetTransactionsTabClass()
+    {
+        var baseClass = "border-b-2 py-4 px-1 font-medium text-sm";
+        return activeTab == "transactions"
+            ? $"{baseClass} border-blue-500 text-blue-600"
+            : $"{baseClass} border-transparent text-gray-500 hover:text-gray-700";
+    }
+
+    // Decorator Pattern Methods
+    private async Task ToggleEnhancedView()
+    {
+        showEnhancedView = !showEnhancedView;
+        if (showEnhancedView && enhancedBudgetData == null)
+        {
+            await LoadEnhancedData();
+        }
+    }
+
+    private async Task LoadEnhancedData()
+    {
+        try
+        {
+            var performanceResponse = await Http.GetAsync($"/api/budgetanalytics/performance/{BudgetId}");
+            var alertsResponse = await Http.GetAsync($"/api/budgetanalytics/alerts/{BudgetId}");
+
+            if (performanceResponse.IsSuccessStatusCode && alertsResponse.IsSuccessStatusCode)
+            {
+                enhancedBudgetData = await performanceResponse.Content.ReadFromJsonAsync<EnhancedBudgetData>();
+                budgetAlerts = await alertsResponse.Content.ReadFromJsonAsync<List<BudgetAlert>>() ?? new();
+            }
+            else
+            {
+                LoadMockEnhancedData();
+            }
+        }
+        catch (Exception)
+        {
+            LoadMockEnhancedData();
+        }
+    }
+
+    private void LoadMockEnhancedData()
+    {
+        enhancedBudgetData = new EnhancedBudgetData
+        {
+            BudgetId = BudgetId,
+            TimeProgress = GetTimeProgress() / 100.0,
+            SpendingProgress = (double)(currentBudget!.SpentAmount / currentBudget.Amount),
+            EfficiencyRatio = 1.15,
+            DailySpendingRate = 61.67,
+            ProjectedEndAmount = 2450m,
+            IsOnTrack = false
+        };
+
+        budgetAlerts = new List<BudgetAlert>
+        {
+            new BudgetAlert { Type = "Warning", Message = "Spending rate is 15% above planned", CreatedAt = DateTime.Now.AddMinutes(-10) },
+            new BudgetAlert { Type = "Info", Message = "Budget is 74% through the period", CreatedAt = DateTime.Now.AddHours(-2) }
+        };
+    }
+
+    private double GetTimeProgress()
+    {
+        if (currentBudget == null) return 0;
+        var totalDays = (currentBudget.PeriodEnd - currentBudget.PeriodStart).TotalDays;
+        var daysPassed = (DateTime.Now - currentBudget.PeriodStart).TotalDays;
+        return Math.Min(100, Math.Max(0, (daysPassed / totalDays) * 100));
+    }
+
+    private string GetAlertClass(string type)
+    {
+        return type switch
+        {
+            "Critical" => "bg-red-50 border-red-200 text-red-800",
+            "Warning" => "bg-yellow-50 border-yellow-200 text-yellow-800",
+            _ => "bg-blue-50 border-blue-200 text-blue-800"
+        };
+    }
+
+    // Enhanced DTOs
+    public class EnhancedBudgetData
+    {
+        public Guid BudgetId { get; set; }
+        public double TimeProgress { get; set; }
+        public double SpendingProgress { get; set; }
+        public double EfficiencyRatio { get; set; }
+        public double DailySpendingRate { get; set; }
+        public decimal ProjectedEndAmount { get; set; }
+        public bool IsOnTrack { get; set; }
+    }
+
+    public class BudgetAlert
+    {
+        public string Type { get; set; } = "";
+        public string Message { get; set; } = "";
+        public DateTime CreatedAt { get; set; }
+    }
+
+    public class BudgetDto
+    {
+        public Guid Id { get; set; }
+        public string Name { get; set; } = "";
+        public DateTime PeriodStart { get; set; }
+        public DateTime PeriodEnd { get; set; }
+        public decimal Amount { get; set; }
+        public decimal SpentAmount { get; set; }
+        public decimal PlannedIncomeAmount { get; set; }
+        public decimal ActualIncomeAmount { get; set; }
+        public string Status { get; set; } = "";
+    }
+
+    public class PlannedItemDto
+    {
+        public Guid Id { get; set; }
+        public string Name { get; set; } = "";
+        public string Description { get; set; } = "";
+        public decimal PlannedAmount { get; set; }
+        public decimal LinkedAmount { get; set; }
+        public string Category { get; set; } = "";
+        public DateTime? DueDate { get; set; }
+        public bool IsRecurring { get; set; }
+
+        public decimal GetUtilizationPercentage()
+        {
+            return PlannedAmount == 0 ? 0 : (LinkedAmount / PlannedAmount) * 100;
+        }
+
+        public bool IsOverBudget()
+        {
+            return LinkedAmount > PlannedAmount;
+        }
+
+        public bool IsCompleted()
+        {
+            return Math.Abs(LinkedAmount - PlannedAmount) < 0.01m;
+        }
+    }
+}

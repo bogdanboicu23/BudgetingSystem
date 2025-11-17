@@ -1,0 +1,22 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\src\Modules\Expenses\Expenses.Application\Expenses.Application.csproj" />
+      <ProjectReference Include="..\src\Modules\Expenses\Expenses.Domain\Expenses.Domain.csproj" />
+      <ProjectReference Include="..\src\Modules\Expenses\Expenses.Infrastructure\Expenses.Infrastructure.csproj" />
+      <ProjectReference Include="..\src\Modules\Incomes\Incomes.Application\Incomes.Application.csproj" />
+      <ProjectReference Include="..\src\Modules\Incomes\Incomes.Infrastructure\Incomes.Infrastructure.csproj" />
+      <ProjectReference Include="..\src\Modules\Transactions.Application\Transactions.Application.csproj" />
+      <ProjectReference Include="..\src\Modules\Transactions.Infrastructure\Transactions.Infrastructure.csproj" />
+      <ProjectReference Include="..\src\Modules\Users\Users.Application\Users.Application.csproj" />
+      <ProjectReference Include="..\src\Modules\Users\Users.Infrastructure\Users.Infrastructure.csproj" />
+      <ProjectReference Include="..\src\Monolith_BudgetSystem.Shared\Monolith_BudgetSystem.Shared.csproj" />
+    </ItemGroup>
+
+</Project>

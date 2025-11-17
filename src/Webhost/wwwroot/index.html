@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Budget System - Design Patterns Demo</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 40px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            text-align: center;
+            max-width: 600px;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        .patterns {
+            margin: 30px 0;
+            text-align: left;
+        }
+        .pattern {
+            background: #f8f9fa;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border-left: 4px solid #3498db;
+        }
+        .demo-button {
+            background: #3498db;
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            margin-top: 20px;
+            transition: background-color 0.3s;
+        }
+        .demo-button:hover {
+            background: #2980b9;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏦 Personal Budget System</h1>
+        <p>A demonstration of behavioral design patterns in a real-world budgeting application.</p>
+
+        <div class="patterns">
+            <div class="pattern">
+                <strong>🎯 Strategy Pattern</strong> - Different budget calculation algorithms
+            </div>
+            <div class="pattern">
+                <strong>🔗 Chain of Responsibility</strong> - Automatic bank transaction categorization
+            </div>
+            <div class="pattern">
+                <strong>👀 Observer Pattern</strong> - Real-time budget limit notifications
+            </div>
+            <div class="pattern">
+                <strong>📊 Template Method</strong> - Flexible report generation
+            </div>
+        </div>
+
+        <p>Experience how design patterns solve real problems in personal finance management!</p>
+
+        <a href="design-patterns-demo.html" class="demo-button">
+            🚀 Start Interactive Demo
+        </a>
+    </div>
+</body>
+</html>
