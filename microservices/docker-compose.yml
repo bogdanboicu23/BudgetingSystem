@@ -7,7 +7,7 @@ services:
       context: ./gateway
       dockerfile: Dockerfile
     ports:
-      - "5000:80"
+      - "5001:80"
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - USER_SERVICE_URL=http://user-service:80
